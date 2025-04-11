@@ -1,11 +1,12 @@
 #' @export simulate
 
-simulate <- function(lattice=TRUE, n, d, p.edge, s, beta=0.2, seed=0, n.burnin=30000, n.sim=100, keep.every=5, verbose=TRUE,
+simulate <- function(n, d, s, beta, n.sim, seed=0, lattice=TRUE,  p.edge = 0.5, n.burnin=30000, keep.every=5, verbose=TRUE,
             n.lambda=20, eps = .00001, tau=0.8, sample.split=TRUE,
-            compare.to.cgm=TRUE){
+            compare.to.cgm=TRUE,
+            r.resume=NULL){
 
 
-# simulate(lattice=TRUE, n=20, d=2, p.edge=0.5, s=1, beta=0.05, seed=0, n.burnin=2000, n.sim=2, keep.every=5, verbose=TRUE, n.lambda=20, eps=1e-5, tau=0.8, sample.split=TRUE, compare.to.cgm = FALSE, note="this simulation is made with beta=0 to ensure that the results match those of CGM.")
+# simulate(lattice=TRUE, n=20, d=2, p.edge=0.5, s=1, beta=0.05, seed=0, n.burnin=2000, n.sim=2, keep.every=5, verbose=TRUE, n.lambda=20, eps=1e-5, tau=0.8, sample.split=TRUE)
 
 require(MASS)
 require(devtools)
@@ -15,87 +16,87 @@ require(CVXR)
 require(tidyverse)
 require(rmarkdown)
 require(rlang)
+require(misle)
 
-source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/generate.R")
-#
-source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/decompose.R")
-#
-source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/estimate.step1.R")
-source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/estimate.step2.R")
-#
-source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/mvc.R")
+# source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/LSW_logit2.R") #a version of Cai, Guo, and Ma's (2021) original that removes some unnecessary things and reformats code for more efficient calculation.
 
-source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/loss-functions.R")
-
-# source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/LSW_logit_jm.R") #a version of LSW_logit.R from Cai, Guo, and Ma 2021, modified only to allow a different specification for the lambda grid in the construction of the original lasso estimator.
-
-source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/LSW_logit2.R") #a version of Cai, Guo, and Ma's (2021) original that removes some unnecessary things and reformats code for more efficient calculation.
-
+paste0("Beginning simulation with the following parameters:
+        n=",n," | d=",d," | s=",s," | beta=",beta," | n.sim=",n.sim) |> message()
 
     # generate simulation data and parameters
 
-data <- generate(lattice,n,d,p.edge,s,beta,seed,n.burnin,n.sim,keep.every,verbose)
-n <- nrow(data$X)
-d <- ncol(data$X)
-A <- data$A
-A.build <- data$A.build
-X <- data$X
-y <- data$Y
-theta <- data$theta
-beta <- data$beta
-indices.on <- which(theta != 0)
+if(is.null(r.resume)){
+
+  data <- generate(lattice,n,d,p.edge,s,beta,seed,n.burnin,n.sim,keep.every,verbose)
+  n <- nrow(data$X)
+  d <- ncol(data$X)
+  A <- data$A
+  A.build <- data$A.build
+  X <- data$X
+  y <- data$Y
+  theta <- data$theta
+  beta <- data$beta
+  indices.on <- which(theta != 0)
 
 
 
-# decompose A,y based on minimum vertex cover computation
+  # decompose A,y based on minimum vertex cover computation
 
-decomp <- decompose(A, A.build, y, X, lattice)
-mvc <- decomp$mvc
-mvc.c <- setdiff(1:n, mvc)
-# A.m <- A[mvc, mvc.c]
-y.mvc <- decomp$y.ordered[1:length(mvc),]
-y.is = decomp$y.ordered[(length(mvc)+1):n,]
-X.is <- decomp$X.ordered[(length(mvc)+1):n,]
+  decomp <- misle::decompose(A, A.build, y, X, lattice)
+  mvc <- decomp$mvc
+  mvc.c <- setdiff(1:n, mvc)
+  # A.m <- A[mvc, mvc.c]
+  y.mvc <- decomp$y.ordered[1:length(mvc),]
+  y.is = decomp$y.ordered[(length(mvc)+1):n,]
+  X.is <- decomp$X.ordered[(length(mvc)+1):n,]
 
 
 
-# implement optional splitting of IS data into training and debiasing sets, for theoretical ease
+  # implement optional splitting of IS data into training and debiasing sets, for theoretical ease
 
-if(sample.split){
-     set.seed(1)
-     train <- sample(length(mvc.c), ceiling(length(mvc.c)/2), replace=FALSE)
-     debias <- setdiff(1:length(mvc.c), train)
-     A.m <- A[mvc, mvc.c[train]]
-     dimnames(A.m) <- list(mvc, mvc.c[train])
-     y.is.train <- y.is[train,]
-     X.is.train <- X.is[train,]
-     y.is.debias <- y.is[debias,]
-     X.is.debias <- X.is[debias,]
-} else {
-  A.m <- A.m[mvc, mvc.c] #1/29: should cause an error
+  if(sample.split){
+       set.seed(1)
+       train <- sample(length(mvc.c), ceiling(length(mvc.c)/2), replace=FALSE)
+       debias <- setdiff(1:length(mvc.c), train)
+       A.m <- A[mvc, mvc.c[train]]
+       dimnames(A.m) <- list(mvc, mvc.c[train])
+       y.is.train <- y.is[train,]
+       X.is.train <- X.is[train,]
+       y.is.debias <- y.is[debias,]
+       X.is.debias <- X.is[debias,]
+  } else {
+    A.m <- A.m[mvc, mvc.c] #1/29: should cause an error
+  }
+
+      to_01 <- function(x){ #convert y variables to {0,1} for debiasing framework
+        if(all( x %in% c(-1,1) ) ) (x+1)/2 else stop("to_01() cannot accept any values except {-1,1}.")
+      }
+
+      rejection.counter <- numeric(n.sim) #0 if fail to reject H_0, 1 otherwise
+
+      sqe <- matrix(-1, nrow=n.sim, ncol=d)
+
+      if(compare.to.cgm) sqe.cgm <- matrix(-1, nrow=n.sim, ncol=d)
+
+      # record histogram on all nonzero parameters, plus 2 sparse parameters
+      set.seed(1) #record the same 2 sparse parameters indices for each simulation setup
+      sparse.2 <- sample(setdiff(1:d, indices.on), 2, replace=FALSE)
+
+      results.hist <- tibble("parameter.no" = c(indices.on,sparse.2), is.nonzero = c(rep(TRUE, length(indices.on)), rep(FALSE, 2)), value = matrix(NA, nrow=length(indices.on)+2, ncol=n.sim),
+                                 se = matrix(NA, nrow=length(indices.on)+2, ncol=n.sim))
+
+      if(compare.to.cgm) results.hist.cgm <- tibble("parameter.no" = c(indices.on,sparse.2), is.nonzero = c(rep(TRUE, length(indices.on)), rep(FALSE, 2)), value = matrix(NA, nrow=length(indices.on)+2, ncol=n.sim),
+                                 se = matrix(NA, nrow=length(indices.on)+2, ncol=n.sim))
+
 }
 
-    to_01 <- function(x){ #convert y variables to {0,1} for debiasing framework
-      if(all( x %in% c(-1,1) ) ) (x+1)/2 else stop("to_01() cannot accept any values except {-1,1}.")
+    interrupted <- 1 #flag to indicate whether replications stopped with error
+    start <- ifelse(!is.null(r.resume), r.resume, 1)
+    if(!is.null(r.resume)){
+      paste0("Resuming simulations beginning at replication number ", r.resume, ".") |> message()
     }
 
-    rejection.counter <- numeric(n.sim) #0 if fail to reject H_0, 1 otherwise
-
-    sqe <- matrix(-1, nrow=n.sim, ncol=d)
-
-    if(compare.to.cgm) sqe.cgm <- matrix(-1, nrow=n.sim, ncol=d)
-
-    # record histogram on all nonzero parameters, plus 2 sparse parameters
-    set.seed(1) #record the same 2 sparse parameters indices for each simulation setup
-    sparse.2 <- sample(setdiff(1:d, indices.on), 2, replace=FALSE)
-
-    results.hist <- tibble("parameter.no" = c(indices.on,sparse.2), is.nonzero = c(rep(TRUE, length(indices.on)), rep(FALSE, 2)), value = matrix(NA, nrow=length(indices.on)+2, ncol=n.sim),
-                               se = matrix(NA, nrow=length(indices.on)+2, ncol=n.sim))
-
-    if(compare.to.cgm) results.hist.cgm <- tibble("parameter.no" = c(indices.on,sparse.2), is.nonzero = c(rep(TRUE, length(indices.on)), rep(FALSE, 2)), value = matrix(NA, nrow=length(indices.on)+2, ncol=n.sim),
-                               se = matrix(NA, nrow=length(indices.on)+2, ncol=n.sim))
-
-   for (r in 1:n.sim) {
+   for (r in start:n.sim) {
 
       # Step 1: construct \ell_1-penalized MLE
 
@@ -173,7 +174,11 @@ if(sample.split){
       }
 
 
-
+  if(!r%%min(5, floor(n.sim/5))){
+    results <- current_env()
+    save(results, file=paste0('C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/Results/temp---r',r,'.RData') )
+    paste0("Save successful after", r, " replications.") |> message()
+  }
 
 
       ## Use (e.g.) Javanmard and Montanari 2014 as starting point for our debiasing approach
@@ -185,20 +190,7 @@ if(sample.split){
    }
 
 
-  # sim.code <- runif(1, 999, 9999) |> ceiling() #to identify data and report
-  # folder <- paste0("Results/",Sys.Date(), "---", sim.code)
-  # dir.create(folder)
-  # save.image(file=paste0(folder, '/sim-data.RData')) #4/3: this is not saving the correct environment. Determine how to fix.
-  # params=list(sim.data=paste0(folder, "/sim-data.RData"),
-  #             date=Sys.Date(),
-  #             code=sim.code,
-  #             note=note,
-  #             compare.to.cgm=compare.to.cgm)
-  # render('results-template.Rmd', output_file=paste0(folder, '/report.pdf')
-  #        )
 
+  interrupted = 0
   return(current_env())
-
-
-   # return(list(data=data, decomposition=decomp, type1.error <- mean(rejection.counter), mse <- colMeans(sqe), n.sim=n.sim))
 }

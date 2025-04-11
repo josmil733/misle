@@ -1,26 +1,26 @@
 #' @export report
 
-report <- function(simulation.path=NULL,lattice=TRUE, n=400, d=40, p.edge=NULL, s=5, beta=0.2, seed=0, n.burnin=30000, n.sim=100, keep.every=5, verbose=TRUE,
+report <- function(n, d, s, beta, n.sim, p.edge=NULL, seed=0, lattice=TRUE, n.burnin=30000, keep.every=5, verbose=TRUE,
             n.lambda=20, eps = .00001, tau=0.8, sample.split=TRUE,
             compare.to.cgm=TRUE,
-            note=NULL, ec=FALSE
+            simulation.path=NULL, note=NULL, ec=FALSE
             ){
-
-# report(lattice=TRUE, n=20, d=4, p.edge=0.5, s=2, beta=0.05, seed=0, n.burnin=2000, n.sim=2, keep.every=5, verbose=TRUE, n.lambda=20, eps=1e-5, tau=0.8, sample.split=TRUE, compare.to.cgm = TRUE, note="this simulation is made with beta=0 to ensure that the results match those of CGM.")
-
-# simulate(lattice=TRUE, n=20, d=4, p.edge=0.5, s=2, beta=0.05, seed=0, n.burnin=2000, n.sim=2, keep.every=5, verbose=TRUE, n.lambda=20, eps=1e-5, tau=0.8, sample.split=TRUE, compare.to.cgm = TRUE)
 
  # perform the simulations with varying n (=400, ... 1000), covariate dimensions (take d= n/10), sparsity level (s=2,5,10). Change beta around some as well. Repeat experiments B=50 times and report what proportion of confidence intervals cover the true parameters. Write a description along with the plots of all the results you received
 
 require(rlang)
 require(stringr)
-source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/misle-estimation.R")
 
 if(!is.null(simulation.path)){
   load(simulation.path)
+  if('results' %in% ls()){ #'results' is the name of an environment containing an incomplete simulation
+    r.resume <- env_get(results, 'r')+1
+    output <- simulate(n=n, d=d, s=s, beta=beta, n.sim=n.sim, p.edge=p.edge, seed=seed, n.burnin=n.burnin, keep.every=keep.every, verbose=verbose,
+           n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, compare.to.cgm=compare.to.cgm, r.resume=r.resume)
+  }
 } else {
-output <- simulate(lattice, n, d, p.edge, s, beta, seed, n.burnin, n.sim, keep.every, verbose,
-           n.lambda, eps, tau, sample.split, compare.to.cgm)
+output <- simulate(n=n, d=d, s=s, beta=beta, n.sim=n.sim, p.edge=p.edge, seed=seed, n.burnin=n.burnin, keep.every=keep.every, verbose=verbose,
+           n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, compare.to.cgm=compare.to.cgm)
 }
 
 save(output, file=paste0("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/hold---", "beta", env_get(output, 'beta'), "-s", env_get(output,'s'), ".RData") ) #temporary measure
