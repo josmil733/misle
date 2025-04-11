@@ -15,17 +15,18 @@ if(!is.null(simulation.path)){
   load(simulation.path)
   if('results' %in% ls()){ #'results' is the name of an environment containing an incomplete simulation
     r.resume <- env_get(results, 'r')+1
-    output <- simulate(n=n, d=d, s=s, beta=beta, n.sim=n.sim, p.edge=p.edge, seed=seed, n.burnin=n.burnin, keep.every=keep.every, verbose=verbose,
-           n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, compare.to.cgm=compare.to.cgm, r.resume=r.resume)
-  }
-} else {
+    if(r.resume <= env_get(results, 'n.sim') ){
+      output <- simulate(n=n, d=d, s=s, beta=beta, n.sim=n.sim, p.edge=p.edge, seed=seed, n.burnin=n.burnin, keep.every=keep.every, verbose=verbose,
+           n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, compare.to.cgm=compare.to.cgm, r.resume=r.resume, data.resume=results)
+        } else {output <- results}
+      } else {output <- current_env()}
+    } else {
 output <- simulate(n=n, d=d, s=s, beta=beta, n.sim=n.sim, p.edge=p.edge, seed=seed, n.burnin=n.burnin, keep.every=keep.every, verbose=verbose,
            n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, compare.to.cgm=compare.to.cgm)
-}
+  }
 
-save(output, file=paste0("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/hold---", "beta", env_get(output, 'beta'), "-s", env_get(output,'s'), ".RData") ) #temporary measure
 
-# sim.code <- runif(1, 999, 9999) |> ceiling() #to identify data and report
+
   directory <- "C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/Results/"
   file.name.base <- paste0('n',env_get(output, 'n'), '-d',env_get(output,'d'), '-beta',env_get(output,"beta"), '-s', env_get(output,'s'))
   folder <- paste0(directory, ifelse(ec, 'EC---', ''), file.name.base)
@@ -43,11 +44,7 @@ save(output, file=paste0("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Infer
 
   dir.create(folder)
   save(output, file=paste0(folder, '/sim-data.RData'))
-  env_bind(output,
-           params=list(date=Sys.Date(),
-              note=note,
-              compare.to.cgm=compare.to.cgm)
-  )
-  # render('results-template.Rmd', output_file=paste0(folder, '/report.pdf')
+  env_bind(output, date=Sys.Date(),
+              simulation.path=simulation.path, note=note, ec=ec)
   render('../results-template.Rmd', output_file=paste0(folder, '/report.pdf'), envir=output)
 }

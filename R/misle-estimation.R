@@ -3,12 +3,13 @@
 simulate <- function(n, d, s, beta, n.sim, seed=0, lattice=TRUE,  p.edge = 0.5, n.burnin=30000, keep.every=5, verbose=TRUE,
             n.lambda=20, eps = .00001, tau=0.8, sample.split=TRUE,
             compare.to.cgm=TRUE,
-            r.resume=NULL){
+            r.resume=NULL, data.resume=NULL){
 
 
 # simulate(lattice=TRUE, n=20, d=2, p.edge=0.5, s=1, beta=0.05, seed=0, n.burnin=2000, n.sim=2, keep.every=5, verbose=TRUE, n.lambda=20, eps=1e-5, tau=0.8, sample.split=TRUE)
 
 require(MASS)
+require(glmnet)
 require(devtools)
 require(katlabutils)
 require(graphon)
@@ -20,12 +21,12 @@ require(misle)
 
 # source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/LSW_logit2.R") #a version of Cai, Guo, and Ma's (2021) original that removes some unnecessary things and reformats code for more efficient calculation.
 
-paste0("Beginning simulation with the following parameters:
-        n=",n," | d=",d," | s=",s," | beta=",beta," | n.sim=",n.sim) |> message()
-
     # generate simulation data and parameters
 
 if(is.null(r.resume)){
+
+  paste0("Beginning simulation with the following parameters:
+        n=",n," | d=",d," | s=",s," | beta=",beta," | n.sim=",n.sim) |> message()
 
   data <- generate(lattice,n,d,p.edge,s,beta,seed,n.burnin,n.sim,keep.every,verbose)
   n <- nrow(data$X)
@@ -93,6 +94,8 @@ if(is.null(r.resume)){
     interrupted <- 1 #flag to indicate whether replications stopped with error
     start <- ifelse(!is.null(r.resume), r.resume, 1)
     if(!is.null(r.resume)){
+      # attach(data.resume)
+      env_coalesce(.GlobalEnv, data.resume)
       paste0("Resuming simulations beginning at replication number ", r.resume, ".") |> message()
     }
 
@@ -177,7 +180,7 @@ if(is.null(r.resume)){
   if(!r%%min(5, floor(n.sim/5))){
     results <- current_env()
     save(results, file=paste0('C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/Results/temp---r',r,'.RData') )
-    paste0("Save successful after", r, " replications.") |> message()
+    paste0("Save successful after ", r, " replications.") |> message()
   }
 
 
