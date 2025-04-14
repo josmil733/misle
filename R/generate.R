@@ -4,6 +4,8 @@
 generate <- function(lattice=TRUE, n, d, p.edge, s, beta=0.2, seed=0, n.burnin=30000, n.sim=100, keep.every=5,
                      verbose=FALSE){
 
+  if(s > d) stop("Please choose s <= d.")
+
 # source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/mvc.R")
 
   # n = 5

@@ -15,6 +15,7 @@ require(katlabutils)
 require(graphon)
 require(CVXR)
 require(tidyverse)
+require(tibble)
 require(rmarkdown)
 require(rlang)
 require(misle)
@@ -79,15 +80,18 @@ if(is.null(r.resume)){
 
       if(compare.to.cgm) sqe.cgm <- matrix(-1, nrow=n.sim, ncol=d)
 
-      # record histogram on all nonzero parameters, plus 2 sparse parameters
-      set.seed(1) #record the same 2 sparse parameters indices for each simulation setup
-      sparse.2 <- sample(setdiff(1:d, indices.on), 2, replace=FALSE)
+      # record histogram on all nonzero parameters, plus <=2 sparse parameters
+      set.seed(1)
+      indices.off <- setdiff(1:d, indices.on)
+      if(length(indices.off)>0){
+        sparse.ind <- sample(indices.off, min(length(indices.off), 2), replace=FALSE)
+      } else sparse.ind <- integer(0)
 
-      results.hist <- tibble("parameter.no" = c(indices.on,sparse.2), is.nonzero = c(rep(TRUE, length(indices.on)), rep(FALSE, 2)), value = matrix(NA, nrow=length(indices.on)+2, ncol=n.sim),
-                                 se = matrix(NA, nrow=length(indices.on)+2, ncol=n.sim))
+      results.hist <- tibble("parameter.no" = c(indices.on,sparse.ind), is.nonzero = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))), value = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+                                 se = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim))
 
-      if(compare.to.cgm) results.hist.cgm <- tibble("parameter.no" = c(indices.on,sparse.2), is.nonzero = c(rep(TRUE, length(indices.on)), rep(FALSE, 2)), value = matrix(NA, nrow=length(indices.on)+2, ncol=n.sim),
-                                 se = matrix(NA, nrow=length(indices.on)+2, ncol=n.sim))
+      if(compare.to.cgm) results.hist.cgm <- tibble("parameter.no" = c(indices.on,sparse.ind), is.nonzero = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))), value = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+                                 se = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim))
 
 }
 
@@ -126,7 +130,7 @@ if(is.null(r.resume)){
           results.hist$value[which(results.hist$parameter.no==j), r] = theta.tilde[j]
           results.hist$se[which(results.hist$parameter.no==j), r] = se[j]
         }
-        if(verbose & !j%%floor(d/5)) print( paste0("replication ", r, ": ", j, " covariates complete."))
+        if(verbose & !j%%max(1,floor(d/5)) ) print( paste0("replication ", r, ": ", j, " covariates complete."))
       }
 
       p.values <- 2*pnorm(-abs(sqrt(n)*theta.tilde/se))
@@ -169,7 +173,7 @@ if(is.null(r.resume)){
           results.hist.cgm$value[which(results.hist.cgm$parameter.no==j), r] = theta.tilde.cgm[j]
           results.hist.cgm$se[which(results.hist.cgm$parameter.no==j), r] = se.cgm[j]
         }
-          if(verbose & !j%%floor(d/5)) print( paste0("replication ", r, ": ", j, " covariates complete (CGM)."))
+          if(verbose & !j%%max(1,floor(d/5)) ) print( paste0("replication ", r, ": ", j, " covariates complete (CGM)."))
         }
 
         sqe.cgm[r,] <- (theta.tilde.cgm-data$theta)^2
@@ -177,10 +181,17 @@ if(is.null(r.resume)){
       }
 
 
-  if(!r%%min(5, floor(n.sim/5))){
+  if(!r%%min(5, ceiling(n.sim/5))){
     results <- current_env()
-    save(results, file=paste0('C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/Results/temp---r',r,'.RData') )
+    file.name <- paste0("n",n,"-d",d,"-beta",beta,"-s",s,"---partial-r=",r,".RData")
+    # save(results, file=paste0('C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/Results/', file.name) )
+    save(results, file=paste0(getwd(), "/", file.name) )
+    if(r==min(5, ceiling(n.sim/5))){
+      paste0("Saving simulation data to ", getwd(), ". Temporary data files will be named in the format n",n,"-d",d,"-beta",beta,"-s",s,"---partial-r=.RData") |> message()
+    } else {
     paste0("Save successful after ", r, " replications.") |> message()
+      }
+
   }
 
 

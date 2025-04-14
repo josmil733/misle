@@ -3,7 +3,7 @@
 report <- function(n, d, s, beta, n.sim, p.edge=NULL, seed=0, lattice=TRUE, n.burnin=30000, keep.every=5, verbose=TRUE,
             n.lambda=20, eps = .00001, tau=0.8, sample.split=TRUE,
             compare.to.cgm=TRUE,
-            simulation.path=NULL, note=NULL, ec=FALSE
+            simulation.path=NULL, note=NULL, ec=FALSE, results.dir=getwd()
             ){
 
  # perform the simulations with varying n (=400, ... 1000), covariate dimensions (take d= n/10), sparsity level (s=2,5,10). Change beta around some as well. Repeat experiments B=50 times and report what proportion of confidence intervals cover the true parameters. Write a description along with the plots of all the results you received
@@ -27,7 +27,7 @@ output <- simulate(n=n, d=d, s=s, beta=beta, n.sim=n.sim, p.edge=p.edge, seed=se
 
 
 
-  directory <- "C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/Results/"
+  directory <- paste0(results.dir, "/")
   file.name.base <- paste0('n',env_get(output, 'n'), '-d',env_get(output,'d'), '-beta',env_get(output,"beta"), '-s', env_get(output,'s'))
   folder <- paste0(directory, ifelse(ec, 'EC---', ''), file.name.base)
   setwd(directory)

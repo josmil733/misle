@@ -1,5 +1,5 @@
 Package: misle
-Title: R package for simulating and assessing results from the MISLE estimation procedure for high-dimensional binary data regression
+Title: High-Dimensional Correlated Binary Regression with MISLE
 Version: 0.0.0.9000
 Authors@R: 
     person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
