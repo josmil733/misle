@@ -24,7 +24,6 @@ getmode <- function(v) {
   uniqv[which.max(tabulate(match(v, uniqv)))]
 }
 
-
 Direction_fixedtuning<-function(Xc,loading, mu=NULL){
   pp<-ncol(Xc)
   n<-nrow(Xc)
@@ -36,9 +35,9 @@ Direction_fixedtuning<-function(Xc,loading, mu=NULL){
   v<-Variable(pp+1)
   obj<-1/4*sum((Xc%*%H%*%v)^2)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
   prob<-Problem(Minimize(obj))
-  result<-CVXR::solve(prob)
-  # print("fixed mu")
-  # print(mu)
+  result<-solve(prob)
+  print("fixed mu")
+  print(mu)
   #print(result$value)
   opt.sol<-result$getValue(v)
   cvxr_status<-result$status
@@ -46,6 +45,8 @@ Direction_fixedtuning<-function(Xc,loading, mu=NULL){
   returnList <- list("proj"=direction)
   return(returnList)
 }
+
+
 
 Direction_searchtuning<-function(Xc,loading,mu=NULL, resol, maxiter){
   pp<-ncol(Xc)
@@ -55,24 +56,19 @@ Direction_searchtuning<-function(Xc,loading,mu=NULL, resol, maxiter){
   lamstop = 0;
   cvxr_status = "optimal";
 
-  loading.norm<-sqrt(sum(loading^2))
-  H<-cbind(loading/loading.norm,diag(1,pp))
-  v<-Variable(pp+1)
-
   mu = sqrt(2.01*log(pp)/n);
-
-  XHv.squared <- (Xc%*%H%*%v)^2
-  Hv <- H%*%v
   #mu.initial= mu;
   while (lamstop == 0 && tryno < maxiter){
     ###### This iteration is to find a good tuning parameter
     #print(mu);
     lastv = opt.sol;
     lastresp = cvxr_status;
-
-    obj<-1/4*sum(XHv.squared)/n+sum((loading/loading.norm)*(Hv))+mu*sum(abs(v))
+    loading.norm<-sqrt(sum(loading^2))
+    H<-cbind(loading/loading.norm,diag(1,pp))
+    v<-Variable(pp+1)
+    obj<-1/4*sum((Xc%*%H%*%v)^2)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
     prob<-Problem(Minimize(obj))
-    result<-CVXR::solve(prob)
+    result<-solve(prob)
     #print(result$value)
     opt.sol<-result$getValue(v)
     cvxr_status<-result$status
@@ -113,11 +109,13 @@ Direction_searchtuning<-function(Xc,loading,mu=NULL, resol, maxiter){
   }
   direction<-(-1)/2*(opt.sol[-1]+opt.sol[1]*loading/loading.norm)
   step<-tryno-1
-  # print(step)
+  print(step)
   returnList <- list("proj"=direction,
                      "step"=step)
   return(returnList)
 }
+
+
 
 cgm.inference1<-function(X,y,lambda=NULL){
 
