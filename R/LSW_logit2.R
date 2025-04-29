@@ -35,7 +35,15 @@ Direction_fixedtuning<-function(Xc,loading, mu=NULL){
   v<-Variable(pp+1)
   obj<-1/4*sum((Xc%*%H%*%v)^2)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
   prob<-Problem(Minimize(obj))
+<<<<<<< HEAD
+<<<<<<< HEAD
   result<-CVXR::solve(prob)
+=======
+  result<-solve(prob)
+>>>>>>> db613dc (restore original direction solvers)
+=======
+  result<-solve(prob)
+>>>>>>> db613dc (restore original direction solvers)
   print("fixed mu")
   print(mu)
   #print(result$value)
@@ -68,7 +76,7 @@ Direction_searchtuning<-function(Xc,loading,mu=NULL, resol, maxiter){
     v<-Variable(pp+1)
     obj<-1/4*sum((Xc%*%H%*%v)^2)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
     prob<-Problem(Minimize(obj))
-    result<-CVXR::solve(prob)
+    result<-solve(prob)
     #print(result$value)
     opt.sol<-result$getValue(v)
     cvxr_status<-result$status
