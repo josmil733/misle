@@ -35,22 +35,9 @@ Direction_fixedtuning<-function(Xc,loading, mu=NULL){
   v<-Variable(pp+1)
   obj<-1/4*sum((Xc%*%H%*%v)^2)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
   prob<-Problem(Minimize(obj))
-<<<<<<< HEAD
-<<<<<<< HEAD
-  result<-CVXR::solve(prob)
-<<<<<<< HEAD
-  # print("fixed mu")
-  # print(mu)
-=======
-=======
   result<-solve(prob)
->>>>>>> db613dc (restore original direction solvers)
-=======
-  result<-solve(prob)
->>>>>>> db613dc (restore original direction solvers)
   print("fixed mu")
   print(mu)
->>>>>>> 6dd7588d5df257801b6f508b3a3cc077e87d3bea
   #print(result$value)
   opt.sol<-result$getValue(v)
   cvxr_status<-result$status
@@ -58,8 +45,6 @@ Direction_fixedtuning<-function(Xc,loading, mu=NULL){
   returnList <- list("proj"=direction)
   return(returnList)
 }
-
-
 
 Direction_searchtuning<-function(Xc,loading,mu=NULL, resol, maxiter){
   pp<-ncol(Xc)
@@ -122,12 +107,11 @@ Direction_searchtuning<-function(Xc,loading,mu=NULL, resol, maxiter){
   }
   direction<-(-1)/2*(opt.sol[-1]+opt.sol[1]*loading/loading.norm)
   step<-tryno-1
-  # print(step)
+  print(step)
   returnList <- list("proj"=direction,
                      "step"=step)
   return(returnList)
 }
-
 
 
 cgm.inference1<-function(X,y,lambda=NULL){
