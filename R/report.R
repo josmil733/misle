@@ -2,7 +2,7 @@
 
 report <- function(n, d, s, beta, n.sim, p.edge=NULL, seed=0, lattice=TRUE, n.burnin=30000, keep.every=5, verbose=TRUE,
             n.lambda=20, eps = .00001, tau=0.8, sample.split=TRUE,
-            compare.to.cgm=TRUE,
+            compare.to.cgm=TRUE, optimize.cgm=TRUE,
             simulation.path=NULL, note=NULL, ec=FALSE, results.dir=getwd()
             ){
 
@@ -10,19 +10,23 @@ report <- function(n, d, s, beta, n.sim, p.edge=NULL, seed=0, lattice=TRUE, n.bu
 
 require(rlang)
 require(stringr)
+require(rmarkdown)
+require(tidyverse)
 
 if(!is.null(simulation.path)){
   load(simulation.path)
   if('results' %in% ls()){ #'results' is the name of an environment containing an incomplete simulation
+  # if('results' %in% ls(output)){ #'results' is the name of an environment containing an incomplete simulation
     r.resume <- env_get(results, 'r')+1
     if(r.resume <= env_get(results, 'n.sim') ){
       output <- simulate(n=n, d=d, s=s, beta=beta, n.sim=n.sim, p.edge=p.edge, seed=seed, n.burnin=n.burnin, keep.every=keep.every, verbose=verbose,
-           n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, compare.to.cgm=compare.to.cgm, r.resume=r.resume, data.resume=results)
+           n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, compare.to.cgm=compare.to.cgm, optimize.cgm=optimize.cgm, r.resume=r.resume, data.resume=results)
         } else {output <- results}
-      } else {output <- current_env()}
+      # } else {output <- current_env()}
+  } else {env_bind(output, simulation.path=simulation.path)}
     } else {
 output <- simulate(n=n, d=d, s=s, beta=beta, n.sim=n.sim, p.edge=p.edge, seed=seed, n.burnin=n.burnin, keep.every=keep.every, verbose=verbose,
-           n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, compare.to.cgm=compare.to.cgm)
+           n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, compare.to.cgm=compare.to.cgm, optimize.cgm)
   }
 
 

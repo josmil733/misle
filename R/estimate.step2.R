@@ -39,7 +39,6 @@ estimate.step2 <- function(theta.hat, beta, A.m, X, y.mvc, y, predictor){
   maxiter=6
 
   n <- length(y) #2/13: should this be changed?
-  d <- ncol(X)
 
     loading = rep(0,d)
     loading[predictor]=1
@@ -66,17 +65,26 @@ estimate.step2 <- function(theta.hat, beta, A.m, X, y.mvc, y, predictor){
             for(t in 1:3){
                index.sel<-sample(1:n,size=ceiling(0.5*min(n,d)), replace=FALSE) #sample smaller sample
 
-               Direction.Est.temp<-Direction_searchtuning(X.weight[index.sel,],loading,mu=NULL, resol, maxiter)
+               Direction.Est.temp<-Direction_searchtuning(Xc=X.weight[index.sel,],loading=loading,mu=NULL, resol=resol, maxiter=maxiter)
+               if(Direction.Est.temp$error.code){
+                  return(list(error=1))
+               }
                step.vec[t]<-Direction.Est.temp$step
             }
             step<-getmode(step.vec)
          }
          # print(paste("step is", step))
          Direction.Est<-Direction_fixedtuning(X.weight,loading,mu=sqrt(cons*log(d)/n)*resol^{-(step-1)})
+        if(Direction.Est$error.code){
+          return(list(error=1))
+          }
       }else{
          ### for option 2
         # print(paste0("n>0.5d not called."))
          Direction.Est<-Direction_searchtuning(X.weight,loading,mu=NULL, resol, maxiter)
+          if(Direction.Est$error.code){
+            return(list(error=1))
+            }
          step<-Direction.Est$step
          # print(paste("step is", step))
       }

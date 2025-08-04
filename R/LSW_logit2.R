@@ -25,6 +25,7 @@ getmode <- function(v) {
 }
 
 Direction_fixedtuning<-function(Xc,loading, mu=NULL){
+  error.code <- 0
   pp<-ncol(Xc)
   n<-nrow(Xc)
   if(is.null(mu)){
@@ -35,14 +36,25 @@ Direction_fixedtuning<-function(Xc,loading, mu=NULL){
   v<-Variable(pp+1)
   obj<-1/4*sum((Xc%*%H%*%v)^2)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
   prob<-Problem(Minimize(obj))
-  result<-CVXR::solve(prob)
-  # print("fixed mu")
-  # print(mu)
+  # result<-CVXR::solve(prob)
+  result <- CVXR::psolve(prob, 'OSQP')
+  if(result$status=='solver_error'){
+    message('Solver error encountered.')
+  }
+  # print('searchtuning: used psolve this time.')
   #print(result$value)
+  # if(result$status != 'solver_error' & rnorm(1)>qnorm(.997)){
+  #   result$status='solver_error'
+  #   message('Solver error induced by random draw.')
+  # }
+  if(result$status=='solver_error'){
+    direction <- numeric(pp+1)
+    returnList <- list("proj"=direction, error.code=1)
+    return(returnList)
+  }
   opt.sol<-result$getValue(v)
-  cvxr_status<-result$status
   direction<-(-1)/2*(opt.sol[-1]+opt.sol[1]*loading/loading.norm)
-  returnList <- list("proj"=direction)
+  returnList <- list("proj"=direction, error.code=error.code)
   return(returnList)
 }
 
@@ -56,6 +68,7 @@ Direction_searchtuning<-function(Xc,loading,mu=NULL, resol, maxiter){
 
   mu = sqrt(2.01*log(pp)/n);
   #mu.initial= mu;
+  error.code <- 0
   while (lamstop == 0 && tryno < maxiter){
     ###### This iteration is to find a good tuning parameter
     #print(mu);
@@ -66,8 +79,20 @@ Direction_searchtuning<-function(Xc,loading,mu=NULL, resol, maxiter){
     v<-Variable(pp+1)
     obj<-1/4*sum((Xc%*%H%*%v)^2)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
     prob<-Problem(Minimize(obj))
-    result<-CVXR::solve(prob)
+    # result<-CVXR::solve(prob)
+    result <- CVXR::psolve(prob, 'OSQP')
+    # print('searchtuning: used psolve this time.')
     #print(result$value)
+    # if(result$status != 'solver_error' & rnorm(1)>qnorm(.997)){
+    #   result$status='solver_error'
+    #   message('Solver error induced by random draw.')
+    # }
+    if(result$status=='solver_error'){
+      returnList <- list("proj"=numeric(pp+1),
+                     "step"=NA,
+                     'error.code'=1)
+    return(returnList)
+    }
     opt.sol<-result$getValue(v)
     cvxr_status<-result$status
     #print(cvxr_status)
@@ -105,24 +130,41 @@ Direction_searchtuning<-function(Xc,loading,mu=NULL, resol, maxiter){
     }
     tryno = tryno + 1;
   }
+
   direction<-(-1)/2*(opt.sol[-1]+opt.sol[1]*loading/loading.norm)
   step<-tryno-1
   # print(step)
   returnList <- list("proj"=direction,
-                     "step"=step)
+                     "step"=step,
+                     'error.code'=error.code)
   return(returnList)
 }
 
 
 cgm.inference1<-function(X,y,lambda=NULL){
-
+a
   X<-as.matrix(X)
 
   ### implement logistic Lasso
 
-  fit = glmnet(X, y,  family = "binomial", alpha = 1, intercept=FALSE,
-               lambda = lambda, standardize=F)
-  return(theta.hat=as.vector(fit$beta))
+  if(is.null(lambda)){
+    fit.cv <- cv.glmnet(X,y,family='binomial',intercept=FALSE)
+    best.lambda.ind <- which(fit.cv$lambda==fit.cv$lambda.min)
+    est <- fit.cv$glmnet.fit$beta[,best.lambda.ind]
+    # best.lambda <- fit$lambda[which.max(fit$dev.ratio)]
+    # fit.opt <- glmnet(X, y, family='binomial', alpha=1, intercept=FALSE, lambda=best.lambda)
+    return(theta.hat=as.vector(est))
+  }
+
+  if(length(lambda==1)){
+    fit = glmnet(X, y,  family = "binomial", alpha = 1, intercept=FALSE,
+                 lambda = lambda, standardize=F)
+    est <- fit$beta
+  } else {
+    stop("Please choose either a single value for lambda, or choose lambda=NULL.")
+  }
+
+  return(theta.hat=as.vector(est))
 }
 
 cgm.inference2<-function(theta.hat, X,y,predictor){
@@ -168,15 +210,24 @@ cgm.inference2<-function(theta.hat, X,y,predictor){
           index.sel<-sample(1:n,size=ceiling(0.5*min(n,d)), replace=FALSE) #sample smaller sample
 
           Direction.Est.temp<-Direction_searchtuning(X.weight[index.sel,],loading,mu=NULL, resol, maxiter)
+          if(Direction.Est.temp$error.code){
+            return(list(error=1))
+          }
           step.vec[t]<-Direction.Est.temp$step
         }
         step<-getmode(step.vec)
       }
       # print(paste("step is", step))
       Direction.Est<-Direction_fixedtuning(X.weight,loading,mu=sqrt(cons*log(d)/n)*resol^{-(step-1)})
+      if(Direction.Est$error.code){
+        return(list(error=1))
+      }
     }else{
       ### for option 2
       Direction.Est<-Direction_searchtuning(X.weight,loading,mu=NULL, resol, maxiter)
+      if(Direction.Est$error.code){
+        return(list(error=1))
+      }
       step<-Direction.Est$step
       # print(paste("step is", step))
     }

@@ -2,11 +2,9 @@
 
 simulate <- function(n, d, s, beta, n.sim, seed=0, lattice=TRUE,  p.edge = 0.5, n.burnin=30000, keep.every=5, verbose=TRUE,
             n.lambda=20, eps = .00001, tau=0.8, sample.split=TRUE,
-            compare.to.cgm=TRUE,
+            compare.to.cgm=TRUE, optimize.cgm=TRUE,
             r.resume=NULL, data.resume=NULL){
 
-
-# simulate(lattice=TRUE, n=20, d=2, p.edge=0.5, s=1, beta=0.05, seed=0, n.burnin=2000, n.sim=2, keep.every=5, verbose=TRUE, n.lambda=20, eps=1e-5, tau=0.8, sample.split=TRUE)
 
 require(MASS)
 require(glmnet)
@@ -18,6 +16,7 @@ require(tidyverse)
 require(tibble)
 require(rmarkdown)
 require(rlang)
+require(listr)
 require(misle)
 
 # source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/LSW_logit2.R") #a version of Cai, Guo, and Ma's (2021) original that removes some unnecessary things and reformats code for more efficient calculation.
@@ -87,11 +86,21 @@ if(is.null(r.resume)){
         sparse.ind <- sample(indices.off, min(length(indices.off), 2), replace=FALSE)
       } else sparse.ind <- integer(0)
 
-      results.hist <- tibble("parameter.no" = c(indices.on,sparse.ind), is.nonzero = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))), value = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
-                                 se = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim))
+      results.hist <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))),"first.step"=matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+                                 "se" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim))
 
-      if(compare.to.cgm) results.hist.cgm <- tibble("parameter.no" = c(indices.on,sparse.ind), is.nonzero = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))), value = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
-                                 se = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim))
+      if(compare.to.cgm) results.hist.cgm <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))), "first.step"=matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+                                 "se" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim))
+
+      if(compare.to.cgm){
+
+        cons=0.05; cons2=0.01 #not sure how to pick these.
+        # if(d==400){cons=0.5;cons2=0.07}
+        # if(d==700){cons=0.85;cons2=0.05}
+        # if(d>800){cons=2;cons2=0.04}
+        train.ind.cgm <- sample(1:n, ceiling(n/2))
+        debias.ind.cgm <- setdiff(1:n, train.ind.cgm)
+      }
 
 }
 
@@ -99,13 +108,15 @@ if(is.null(r.resume)){
     start <- ifelse(!is.null(r.resume), r.resume, 1)
     if(!is.null(r.resume)){
       # attach(data.resume)
-      env_coalesce(.GlobalEnv, data.resume)
+      # env_coalesce(.GlobalEnv, data.resume)
+      env_coalesce(current_env(), data.resume)
       paste0("Resuming simulations beginning at replication number ", r.resume, ".") |> message()
     }
 
-   for (r in start:n.sim) {
+    r <- start
+    while(r <= n.sim){
 
-      # Step 1: construct \ell_1-penalized MLE
+       # Step 1: construct \ell_1-penalized MLE
 
       theta.hat <- estimate.step1(grid.lambda=list(from=0.01, to=0.1, length.out=20),
                                   d=d, eps=eps, y.mvc = y.mvc[,r], y=if(sample.split) y.is.train[,r] else y.is[,r],
@@ -113,10 +124,28 @@ if(is.null(r.resume)){
                            beta = beta, A.m = A.m, mvc.c = mvc.c,
                            tau=0.8)
 
+      if(compare.to.cgm){
+        y.cgm.train <- y[train.ind.cgm, r]
+        y.cgm.debias <- y[debias.ind.cgm, r]
+        X.cgm.train <- X[train.ind.cgm,]
+        X.cgm.debias <- X[debias.ind.cgm,]
+        if(optimize.cgm){
+          theta.hat.cgm <- cgm.inference1(X = X.cgm.train, y = to_01(y.cgm.train), lambda = NULL)
+        } else {
+          theta.hat.cgm <- cgm.inference1(X = X.cgm.train, y = to_01(y.cgm.train), lambda = cons2*sqrt(log(d)/n))
+        }
+      }
+
       # Step 2: debias theta.hat
 
       theta.tilde <- numeric(d)
       se <- numeric(d)
+      if(compare.to.cgm){
+        theta.tilde.cgm <- numeric(d)
+        se.cgm <- numeric(d)
+      }
+
+      error.flag <- 0
 
       for(j in 1:d){
         debias <- estimate.step2(theta.hat=theta.hat, beta = beta, A.m = A.m,
@@ -124,13 +153,55 @@ if(is.null(r.resume)){
                       y=if(sample.split) to_01(y.is.train[,r]) else to_01(y.is[,r]),
                       y.mvc = y.mvc[,r], predictor=j)
 
+        if(compare.to.cgm){
+          debias.cgm <- cgm.inference2(theta.hat.cgm, X.cgm.debias, y.cgm.debias, j)
+        }
+
+        if('error' %in% names(debias) | 'error' %in% names(debias.cgm)){
+          error.flag <- 1
+          if('error' %in% names(debias) & !'error' %in% names(debias.cgm)) err.source='MISLE'
+          if('error' %in% names(debias.cgm) & !'error' %in% names(debias)) err.source='CGM'
+          if('error' %in% names(debias) & 'error' %in% names(debias.cgm)) err.source='MISLE and CGM'
+          wrn <- paste0('Error detected in direction vector computation for ', err.source, ' for replicate r=', r, ' and covariate j=', j, '. Generating new data and attempting this iteration again.')
+          message(wrn)
+          break
+        }
+
         theta.tilde[j] <- debias$theta.tilde
         se[j] <- debias$se #12/4: may need to update this calculation.
         if(j %in% results.hist$parameter.no){
+          results.hist$first.step[which(results.hist$parameter.no==j), r] = theta.hat[j]
           results.hist$value[which(results.hist$parameter.no==j), r] = theta.tilde[j]
           results.hist$se[which(results.hist$parameter.no==j), r] = se[j]
         }
-        if(verbose & !j%%max(1,floor(d/5)) ) print( paste0("replication ", r, ": ", j, " covariates complete."))
+
+        if(compare.to.cgm){
+          theta.tilde.cgm[j] <- debias.cgm$theta.tilde
+          se.cgm[j] <- debias.cgm$se
+          if(j %in% results.hist.cgm$parameter.no){
+            results.hist.cgm$first.step[which(results.hist.cgm$parameter.no==j), r] = theta.hat.cgm[j]
+            results.hist.cgm$value[which(results.hist.cgm$parameter.no==j), r] = theta.tilde.cgm[j]
+            results.hist.cgm$se[which(results.hist.cgm$parameter.no==j), r] = se.cgm[j]
+          }
+        }
+
+        if(verbose & !j%%max(1,floor(d/5)) ) message( paste0("replication ", r, ": ", j, " covariates complete."))
+      }
+
+      if(error.flag){
+          data.regen <- regenerate(r,y[,n.sim],X,theta,beta,A)
+          data$Y[,r] = data.regen$y
+          y.ordered <- numeric(n)
+          y.ordered[1:length(mvc)] <- data.regen$y[mvc]
+          y.ordered[(length(mvc)+1):n] <- data.regen$y[mvc.c]
+          names(y.ordered) <- c(mvc, mvc.c)
+          y.mvc[,r] <- y.ordered[1:length(mvc)]
+          y.is[,r] = y.ordered[(length(mvc)+1):n]
+          if(sample.split){
+            y.is.train[,r] <- y.is[train,r]
+            y.is.debias[,r] <- y.is[setdiff(1:length(mvc.c), train),r]
+          }
+          next
       }
 
       p.values <- 2*pnorm(-abs(sqrt(n)*theta.tilde/se))
@@ -140,45 +211,8 @@ if(is.null(r.resume)){
       rejection.counter[r] <- 1*(any(p.values <= 0.05/d)) #Bonferroni correction
 
       sqe[r,] <- (theta.tilde-theta)^2
+      if(compare.to.cgm) sqe.cgm[r,] <- (theta.tilde.cgm-theta)^2
 
-
-
-      if(compare.to.cgm){
-
-        cons=0.05; cons2=0.01 #not sure how to pick these.
-        # if(d==400){cons=0.5;cons2=0.07}
-        # if(d==700){cons=0.85;cons2=0.05}
-        # if(d>800){cons=2;cons2=0.04}
-
-        train.cgm <- sample(1:n, ceiling(n/2))
-        debias.cgm <- setdiff(1:n, train.cgm)
-        y.cgm.train <- y[train.cgm, r]
-        y.cgm.debias <- y[debias.cgm, r]
-        X.cgm.train <- X[train.cgm,]
-        X.cgm.debias <- X[debias.cgm,]
-
-        theta.tilde.cgm <- numeric(d)
-        se.cgm <- numeric(d)
-
-        theta.hat.cgm <- cgm.inference1(X = X.cgm.train, y = to_01(y.cgm.train), lambda = cons2*sqrt(log(d)/n))
-
-        for(j in 1:d){
-          # cgm.fit <- cgm.mod.jm(X=X, y=y[,r], nlambda=n.lambda, lambda.min.ratio=0.01, intercept=FALSE,
-                                      # mu=NULL, step=NULL, resol=1.5, cons=2.01, maxiter=6)
-          debias.cgm <- cgm.inference2(theta.hat, X.cgm.debias, y.cgm.debias, j)
-          theta.tilde.cgm[j] <- debias.cgm$theta.tilde
-          se.cgm[j] <- debias.cgm$se
-
-        if(j %in% results.hist.cgm$parameter.no){
-          results.hist.cgm$value[which(results.hist.cgm$parameter.no==j), r] = theta.tilde.cgm[j]
-          results.hist.cgm$se[which(results.hist.cgm$parameter.no==j), r] = se.cgm[j]
-        }
-          if(verbose & !j%%max(1,floor(d/5)) ) print( paste0("replication ", r, ": ", j, " covariates complete (CGM)."))
-        }
-
-        sqe.cgm[r,] <- (theta.tilde.cgm-data$theta)^2
-
-      }
 
 
   if(!r%%min(5, ceiling(n.sim/5))){
@@ -189,10 +223,15 @@ if(is.null(r.resume)){
     if(r==min(5, ceiling(n.sim/5))){
       paste0("Saving simulation data to ", getwd(), ". Temporary data files will be named in the format n",n,"-d",d,"-beta",beta,"-s",s,"---partial-r=.RData") |> message()
     } else {
-    paste0("Save successful after ", r, " replications.") |> message()
+    message("Save successful after ", r, " replications.") |> message()
       }
 
   }
+  message('Iteration successful. Increasing r.')
+  r = r+1
+}
+
+  start <- r+1 #for ease of debugging
 
 
       ## Use (e.g.) Javanmard and Montanari 2014 as starting point for our debiasing approach
@@ -201,8 +240,6 @@ if(is.null(r.resume)){
       # test.stat <- sqrt(n)*theta.tilde/sqrt(asymp.var) #under H_0: \theta=0 (2-sided)
       # p.value <- 2*pnorm(test.stat)
       # rejection.counter[r] <- 1*(p.value <= 0.05)
-   }
-
 
 
   interrupted = 0
