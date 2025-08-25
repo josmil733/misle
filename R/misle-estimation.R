@@ -2,7 +2,7 @@
 
 simulate <- function(n, d, s, beta, n.sim, seed=0, lattice=TRUE,  p.edge = 0.5, n.burnin=30000, keep.every=5, verbose=TRUE,
             n.lambda=20, eps = .00001, tau=0.8, sample.split=TRUE,
-            compare.to.cgm=TRUE, optimize.cgm=TRUE,
+            compare.to.cgm=FALSE, optimize.cgm=TRUE, compare.to.vdg=TRUE, proposed.method=TRUE, inherit.data=NULL,
             r.resume=NULL, data.resume=NULL){
 
 
@@ -17,13 +17,14 @@ require(tibble)
 require(rmarkdown)
 require(rlang)
 require(listr)
+require(hdi)
 require(misle)
 
 # source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/LSW_logit2.R") #a version of Cai, Guo, and Ma's (2021) original that removes some unnecessary things and reformats code for more efficient calculation.
 
     # generate simulation data and parameters
 
-if(is.null(r.resume)){
+if(is.null(r.resume) & is.null(inherit.data)){
 
   paste0("Beginning simulation with the following parameters:
         n=",n," | d=",d," | s=",s," | beta=",beta," | n.sim=",n.sim) |> message()
@@ -75,9 +76,11 @@ if(is.null(r.resume)){
 
       rejection.counter <- numeric(n.sim) #0 if fail to reject H_0, 1 otherwise
 
-      sqe <- matrix(-1, nrow=n.sim, ncol=d)
+      if(proposed.method) sqe <- matrix(-1, nrow=n.sim, ncol=d)
 
       if(compare.to.cgm) sqe.cgm <- matrix(-1, nrow=n.sim, ncol=d)
+
+      if(compare.to.vdg) sqe.vdg <- matrix(-1, nrow=n.sim, ncol=d)
 
       # record histogram on all nonzero parameters, plus <=2 sparse parameters
       set.seed(1)
@@ -86,11 +89,15 @@ if(is.null(r.resume)){
         sparse.ind <- sample(indices.off, min(length(indices.off), 2), replace=FALSE)
       } else sparse.ind <- integer(0)
 
-      results.hist <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))),"first.step"=matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
-                                 "se" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim))
+      if(proposed.method) results.hist <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))),"first.step"=matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+                                 "se" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+                             'ci' = array(NA, dim=c(length(indices.on) + length(sparse.ind), n.sim, 2), dimnames = list(par.no = c(indices.on,sparse.ind), sim = 1:n.sim, bound=c('lower','upper')))
+                             )
 
       if(compare.to.cgm) results.hist.cgm <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))), "first.step"=matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
-                                 "se" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim))
+                                 "se" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+                                 'ci' = array(NA, dim=c(length(indices.on) + length(sparse.ind), n.sim, 2), dimnames = list(par.no = c(indices.on,sparse.ind), sim = 1:n.sim, bound=c('lower','upper')))
+                                 )
 
       if(compare.to.cgm){
 
@@ -102,6 +109,37 @@ if(is.null(r.resume)){
         debias.ind.cgm <- setdiff(1:n, train.ind.cgm)
       }
 
+      if(compare.to.vdg) results.hist.vdg <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+                                                    "se" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+                                                    'ci' = array(NA, dim=c(length(indices.on) + length(sparse.ind), n.sim, 2), dimnames = list(par.no = c(indices.on,sparse.ind), sim = 1:n.sim, bound=c('lower','upper')))
+      )
+
+}
+
+if(!is.null(inherit.data)){
+  load(inherit.data)
+  env_coalesce(current_env(), output)
+
+  sqe.cgm <- matrix(-1, nrow=n.sim, ncol=d)
+
+  sqe.vdg <- matrix(-1, nrow=n.sim, ncol=d)
+
+  results.hist.cgm <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))), "first.step"=matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+                             "se" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+                             'ci' = array(NA, dim=c(length(indices.on) + length(sparse.ind), n.sim, 2), dimnames = list(par.no = c(indices.on,sparse.ind), sim = 1:n.sim, bound=c('lower','upper')))
+  )
+
+    cons=0.05; cons2=0.01 #not sure how to pick these.
+    # if(d==400){cons=0.5;cons2=0.07}
+    # if(d==700){cons=0.85;cons2=0.05}
+    # if(d>800){cons=2;cons2=0.04}
+    train.ind.cgm <- sample(1:n, ceiling(n/2))
+    debias.ind.cgm <- setdiff(1:n, train.ind.cgm)
+
+  results.hist.vdg <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+                             "se" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+                             'ci' = array(NA, dim=c(length(indices.on) + length(sparse.ind), n.sim, 2), dimnames = list(par.no = c(indices.on,sparse.ind), sim = 1:n.sim, bound=c('lower','upper')))
+  )
 }
 
     interrupted <- 1 #flag to indicate whether replications stopped with error
@@ -116,13 +154,35 @@ if(is.null(r.resume)){
     r <- start
     while(r <= n.sim){
 
+      # Compare to vdg
+
+      if(compare.to.vdg){
+        if(r==1){
+          fit.lasso <- hdi::lasso.proj(x = X, y = y[,1], standardize = F, family = "binomial", return.Z = TRUE)
+          Z <- fit.lasso$Z
+        }
+        fit.lasso <- hdi::lasso.proj(x = X, y = y[,r], Z = Z, standardize = F, family = "binomial", return.Z = FALSE)
+        theta.tilde.vdg <- fit.lasso$bhat
+        sqe.vdg[r,] <- (theta.tilde.vdg-theta)^2
+        se.vdg <- fit.lasso$se
+        for(j in 1:d){
+        if(j %in% results.hist.vdg$parameter.no){
+          results.hist.vdg$value[which(results.hist.vdg$parameter.no==j), r] = theta.tilde.vdg[j]
+          results.hist.vdg$se[which(results.hist.vdg$parameter.no==j), r] = se.vdg[j]
+          results.hist.vdg$ci[which(results.hist.vdg$parameter.no==j), r,] = c(theta.tilde.vdg[j] - 1.96*se.vdg[j], theta.tilde.vdg[j] + 1.96*se.vdg[j])
+        }
+      }
+    }
+
        # Step 1: construct \ell_1-penalized MLE
 
-      theta.hat <- estimate.step1(grid.lambda=list(from=0.01, to=0.1, length.out=20),
-                                  d=d, eps=eps, y.mvc = y.mvc[,r], y=if(sample.split) y.is.train[,r] else y.is[,r],
-                           X=if(sample.split) X.is.train else X.is,
-                           beta = beta, A.m = A.m, mvc.c = mvc.c,
-                           tau=0.8)
+      if(proposed.method){
+        theta.hat <- estimate.step1(grid.lambda=list(from=0.01, to=0.1, length.out=20),
+                                    d=d, eps=eps, y.mvc = y.mvc[,r], y=if(sample.split) y.is.train[,r] else y.is[,r],
+                                    X=if(sample.split) X.is.train else X.is,
+                                    beta = beta, A.m = A.m, mvc.c = mvc.c,
+                                    tau=0.8)
+        }
 
       if(compare.to.cgm){
         y.cgm.train <- y[train.ind.cgm, r]
@@ -138,8 +198,11 @@ if(is.null(r.resume)){
 
       # Step 2: debias theta.hat
 
-      theta.tilde <- numeric(d)
-      se <- numeric(d)
+      if(proposed.method){
+        theta.tilde <- numeric(d)
+        se <- numeric(d)
+      }
+
       if(compare.to.cgm){
         theta.tilde.cgm <- numeric(d)
         se.cgm <- numeric(d)
@@ -148,31 +211,50 @@ if(is.null(r.resume)){
       error.flag <- 0
 
       for(j in 1:d){
-        debias <- estimate.step2(theta.hat=theta.hat, beta = beta, A.m = A.m,
-                      X=if(sample.split) X.is.train else X.is,
-                      y=if(sample.split) to_01(y.is.train[,r]) else to_01(y.is[,r]),
-                      y.mvc = y.mvc[,r], predictor=j)
+        if(proposed.method){
+          # debias <- estimate.step2(theta.hat=theta.hat, beta = beta, A.m = A.m,
+                                   # X=if(sample.split) X.is.train else X.is,
+                                   # y=if(sample.split) to_01(y.is.train[,r]) else to_01(y.is[,r]),
+                                   # y.mvc = y.mvc[,r], predictor=j)
+
+          debias <- estimate.step2(theta.hat=theta.hat, beta = beta, A.m = A.m,
+                                   X=if(sample.split) X.is.debias else X.is,
+                                   y=if(sample.split) to_01(y.is.debias[,r]) else to_01(y.is[,r]),
+                                   y.mvc = y.mvc[,r], predictor=j)
+
+          if('error' %in% names(debias)){
+            error.flag <- 1
+            err.source <- 'MISLE'
+        }
 
         if(compare.to.cgm){
-          debias.cgm <- cgm.inference2(theta.hat.cgm, X.cgm.debias, y.cgm.debias, j)
+          debias.cgm <- cgm.inference2(theta.hat.cgm, X.cgm.debias, to_01(y.cgm.debias), j)
+          if('error' %in% names(debias.cgm)){
+            error.flag <- 1
+            if('error' %in% names(debias) & !'error' %in% names(debias.cgm)) err.source='MISLE'
+            if('error' %in% names(debias.cgm) & !'error' %in% names(debias)) err.source='CGM'
+            if('error' %in% names(debias) & 'error' %in% names(debias.cgm)) err.source='MISLE and CGM'
+          }
         }
 
-        if('error' %in% names(debias) | 'error' %in% names(debias.cgm)){
-          error.flag <- 1
-          if('error' %in% names(debias) & !'error' %in% names(debias.cgm)) err.source='MISLE'
-          if('error' %in% names(debias.cgm) & !'error' %in% names(debias)) err.source='CGM'
-          if('error' %in% names(debias) & 'error' %in% names(debias.cgm)) err.source='MISLE and CGM'
-          wrn <- paste0('Error detected in direction vector computation for ', err.source, ' for replicate r=', r, ' and covariate j=', j, '. Generating new data and attempting this iteration again.')
-          message(wrn)
-          break
+          if(error.flag){
+            wrn <- paste0('Error detected in direction vector computation for ', err.source, ' for replicate r=', r, ' and covariate j=', j, '. Generating new data and attempting this iteration again.')
+            message(wrn)
+            break
+          }
         }
 
-        theta.tilde[j] <- debias$theta.tilde
-        se[j] <- debias$se #12/4: may need to update this calculation.
-        if(j %in% results.hist$parameter.no){
-          results.hist$first.step[which(results.hist$parameter.no==j), r] = theta.hat[j]
-          results.hist$value[which(results.hist$parameter.no==j), r] = theta.tilde[j]
-          results.hist$se[which(results.hist$parameter.no==j), r] = se[j]
+
+
+        if(proposed.method){
+          theta.tilde[j] <- debias$theta.tilde
+          se[j] <- debias$se
+          if(j %in% results.hist$parameter.no){
+            results.hist$first.step[which(results.hist$parameter.no==j), r] = theta.hat[j]
+            results.hist$value[which(results.hist$parameter.no==j), r] = theta.tilde[j]
+            results.hist$se[which(results.hist$parameter.no==j), r] = se[j]
+            results.hist$ci[which(results.hist$parameter.no==j), r,] = c(theta.tilde[j] - 1.96*se[j], theta.tilde[j] + 1.96*se[j])
+          }
         }
 
         if(compare.to.cgm){
@@ -182,10 +264,11 @@ if(is.null(r.resume)){
             results.hist.cgm$first.step[which(results.hist.cgm$parameter.no==j), r] = theta.hat.cgm[j]
             results.hist.cgm$value[which(results.hist.cgm$parameter.no==j), r] = theta.tilde.cgm[j]
             results.hist.cgm$se[which(results.hist.cgm$parameter.no==j), r] = se.cgm[j]
+            results.hist.cgm$ci[which(results.hist.cgm$parameter.no==j), r,] = c(theta.tilde.cgm[j] - 1.96*se.cgm[j], theta.tilde.cgm[j] + 1.96*se.cgm[j])
           }
         }
 
-        if(verbose & !j%%max(1,floor(d/5)) ) message( paste0("replication ", r, ": ", j, " covariates complete."))
+        if(verbose & !j%%max(1,floor(d/5)) & (proposed.method | compare.to.cgm)) message( paste0("replication ", r, ": ", j, " covariates complete."))
       }
 
       if(error.flag){
@@ -204,31 +287,36 @@ if(is.null(r.resume)){
           next
       }
 
-      p.values <- 2*pnorm(-abs(sqrt(n)*theta.tilde/se))
+      if(proposed.method){
+        p.values <- 2*pnorm(-abs(sqrt(n)*theta.tilde/se))
+        # debias <- deb.lasso(x=X.is, y=y.is, lasso_est=theta.hat, inference=TRUE)
+        # rejection.counter[r] <- 1*(any(debias$p.value <= 0.05/d)) #Bonferroni correction
+        rejection.counter[r] <- 1*(any(p.values <= 0.05/d)) #Bonferroni correction
+        sqe[r,] <- (theta.tilde-theta)^2
+      }
 
-      # debias <- deb.lasso(x=X.is, y=y.is, lasso_est=theta.hat, inference=TRUE)
-      # rejection.counter[r] <- 1*(any(debias$p.value <= 0.05/d)) #Bonferroni correction
-      rejection.counter[r] <- 1*(any(p.values <= 0.05/d)) #Bonferroni correction
-
-      sqe[r,] <- (theta.tilde-theta)^2
       if(compare.to.cgm) sqe.cgm[r,] <- (theta.tilde.cgm-theta)^2
 
 
-
-  if(!r%%min(5, ceiling(n.sim/5))){
-    results <- current_env()
-    file.name <- paste0("n",n,"-d",d,"-beta",beta,"-s",s,"---partial-r=",r,".RData")
-    # save(results, file=paste0('C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/Results/', file.name) )
-    save(results, file=paste0(getwd(), "/", file.name) )
-    if(r==min(5, ceiling(n.sim/5))){
-      paste0("Saving simulation data to ", getwd(), ". Temporary data files will be named in the format n",n,"-d",d,"-beta",beta,"-s",s,"---partial-r=.RData") |> message()
-    } else {
-    message("Save successful after ", r, " replications.") |> message()
+  if(proposed.method | compare.to.cgm){
+    if(!r%%min(5, ceiling(n.sim/5))){
+      results <- current_env()
+      file.name <- paste0("n",n,"-d",d,"-beta",beta,"-s",s,"---partial-r=",r,".RData")
+      # save(results, file=paste0('C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/Results/', file.name) )
+      save(results, file=paste0(getwd(), "/", file.name) )
+      if(r==min(5, ceiling(n.sim/5))){
+        paste0("Saving simulation data to ", getwd(), ". Temporary data files will be named in the format n",n,"-d",d,"-beta",beta,"-s",s,"---partial-r=.RData") |> message()
+      } else {
+        message("Save successful after ", r, " replications.")
       }
 
+    }
+    message('Iteration successful. Increasing r.')
   }
-  message('Iteration successful. Increasing r.')
-  r = r+1
+  if(compare.to.vdg & !proposed.method & !compare.to.cgm & r < n.sim){
+    message('Iteration successful. Increasing r to r=', r+1, '.')
+  }
+      r = r+1
 }
 
   start <- r+1 #for ease of debugging

@@ -98,7 +98,7 @@ estimate.step2 <- function(theta.hat, beta, A.m, X, y.mvc, y, predictor){
 
    X.weight2 = diag(c(w(lin.pred.hat)*sqrt(f(lin.pred.hat)*(1-f(lin.pred.hat))))) %*% X
    # se<-sqrt(mean((X.weight2%*%direction)^2))/sqrt(n)
-   se<-mean( (X.weight2%*%direction)^2 ) |> sqrt()
+   se<-(mean( (X.weight2%*%direction)^2 )/n) |> sqrt() #changed 8/4/2025
    #sd
    #mean((y - exp(lin.pred.hat)/(1+ exp(lin.pred.hat)))^2)
    #mean((y - exp(exp_val)/(1+ exp(exp_val)))^2)
