@@ -21,7 +21,7 @@ getmode <- function(v) {
 
 
 
-estimate.step2 <- function(theta.hat, beta, A.m, X, y.mvc, y, predictor){
+estimate.step2 <- function(theta.hat, beta, A.m, X, y.mvc, y, predictor, p.max.iter){
     ### Option 1: search tuning parameter with steps determined by the ill conditioned case (n=p/2)
   ### Option 2: search tuning parameter with maximum 10 steps.
   ####### Option 3: fixed tuning parameter and this is not recommended without exploring the tuning parameter selection
@@ -36,7 +36,7 @@ estimate.step2 <- function(theta.hat, beta, A.m, X, y.mvc, y, predictor){
   step=NULL
   resol=1.5
   cons=2.01
-  maxiter=6
+  # maxiter=6
 
   n <- length(y) #2/13: should this be changed?
 
@@ -65,7 +65,7 @@ estimate.step2 <- function(theta.hat, beta, A.m, X, y.mvc, y, predictor){
             for(t in 1:3){
                index.sel<-sample(1:n,size=ceiling(0.5*min(n,d)), replace=FALSE) #sample smaller sample
 
-               Direction.Est.temp<-Direction_searchtuning(Xc=X.weight[index.sel,],loading=loading,mu=NULL, resol=resol, maxiter=maxiter)
+               Direction.Est.temp<-Direction_searchtuning(Xc=X.weight[index.sel,],loading=loading,mu=NULL, resol=resol, maxiter=p.max.iter)
                if(Direction.Est.temp$error.code){
                   return(list(error=1))
                }
@@ -81,7 +81,7 @@ estimate.step2 <- function(theta.hat, beta, A.m, X, y.mvc, y, predictor){
       }else{
          ### for option 2
         # print(paste0("n>0.5d not called."))
-         Direction.Est<-Direction_searchtuning(X.weight,loading,mu=NULL, resol, maxiter)
+         Direction.Est<-Direction_searchtuning(X.weight,loading,mu=NULL, resol, maxiter=p.max.iter)
           if(Direction.Est$error.code){
             return(list(error=1))
             }

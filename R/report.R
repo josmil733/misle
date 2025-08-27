@@ -1,7 +1,7 @@
 #' @export report
 
 report <- function(n, d, s, beta, k=2, n.sim, p.edge=NULL, seed=0, lattice=TRUE, n.burnin=30000, keep.every=5, verbose=FALSE,
-            n.lambda=20, eps = .00001, tau=0.8, sample.split=TRUE,
+            n.lambda=20, eps = .00001, tau=0.8, sample.split=TRUE, p.max.iter=6,
             compare.to.cgm=FALSE, optimize.cgm=TRUE, compare.to.vdg=FALSE, proposed.method=TRUE, inherit.data=NULL, auto.save=FALSE,
             simulation.path=NULL, note=NULL, ec=FALSE, results.dir=getwd()
             ){
@@ -30,7 +30,7 @@ if(!is.null(simulation.path)){
       # env_coalesce(.GlobalEnv, results)
       # env_coalesce(caller_env(3))
       output <- simulate(n=n, d=d, s=s, beta=beta, k=k, n.sim=n.sim, p.edge=p.edge, seed=seed, n.burnin=n.burnin, keep.every=keep.every, verbose=verbose,
-           n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, compare.to.cgm=compare.to.cgm, optimize.cgm=optimize.cgm, compare.to.vdg=compare.to.vdg, proposed.method=proposed.method, inherit.data=inherit.data,
+           n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, p.max.iter=p.max.iter, compare.to.cgm=compare.to.cgm, optimize.cgm=optimize.cgm, compare.to.vdg=compare.to.vdg, proposed.method=proposed.method, inherit.data=inherit.data,
            r.resume=r.resume, data.resume=results, auto.save=auto.save)
       sim.active = TRUE
         } else {output <- results}
@@ -47,7 +47,7 @@ if(!is.null(simulation.path)){
         rm(output)
       }
 output <- simulate(n=n, d=d, s=s, beta=beta, k=k, n.sim=n.sim, p.edge=p.edge, seed=seed, n.burnin=n.burnin, keep.every=keep.every, verbose=verbose,
-           n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, compare.to.cgm=compare.to.cgm, optimize.cgm=optimize.cgm, compare.to.vdg=compare.to.vdg, proposed.method=proposed.method, inherit.data=inherit.data, auto.save=auto.save)
+           n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, p.max.iter=p.max.iter, compare.to.cgm=compare.to.cgm, optimize.cgm=optimize.cgm, compare.to.vdg=compare.to.vdg, proposed.method=proposed.method, inherit.data=inherit.data, auto.save=auto.save)
   sim.active=TRUE
   }
 
