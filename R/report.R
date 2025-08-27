@@ -1,8 +1,8 @@
 #' @export report
 
-report <- function(n, d, s, beta, n.sim, p.edge=NULL, seed=0, lattice=TRUE, n.burnin=30000, keep.every=5, verbose=TRUE,
+report <- function(n, d, s, beta, n.sim, p.edge=NULL, seed=0, lattice=TRUE, n.burnin=30000, keep.every=5, verbose=FALSE,
             n.lambda=20, eps = .00001, tau=0.8, sample.split=TRUE,
-            compare.to.cgm=FALSE, optimize.cgm=TRUE, compare.to.vdg=TRUE, proposed.method=TRUE, inherit.data=NULL,
+            compare.to.cgm=FALSE, optimize.cgm=TRUE, compare.to.vdg=FALSE, proposed.method=TRUE, inherit.data=NULL, auto.save=FALSE,
             simulation.path=NULL, note=NULL, ec=FALSE, results.dir=getwd()
             ){
 
@@ -31,7 +31,7 @@ if(!is.null(simulation.path)){
       # env_coalesce(caller_env(3))
       output <- simulate(n=n, d=d, s=s, beta=beta, n.sim=n.sim, p.edge=p.edge, seed=seed, n.burnin=n.burnin, keep.every=keep.every, verbose=verbose,
            n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, compare.to.cgm=compare.to.cgm, optimize.cgm=optimize.cgm, compare.to.vdg=compare.to.vdg, proposed.method=proposed.method, inherit.data=inherit.data,
-           r.resume=r.resume, data.resume=results)
+           r.resume=r.resume, data.resume=results, auto.save=auto.save)
       sim.active = TRUE
         } else {output <- results}
       # } else {output <- current_env()}
@@ -47,7 +47,7 @@ if(!is.null(simulation.path)){
         rm(output)
       }
 output <- simulate(n=n, d=d, s=s, beta=beta, n.sim=n.sim, p.edge=p.edge, seed=seed, n.burnin=n.burnin, keep.every=keep.every, verbose=verbose,
-           n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, compare.to.cgm=compare.to.cgm, optimize.cgm=optimize.cgm, compare.to.vdg=compare.to.vdg, proposed.method=proposed.method, inherit.data=inherit.data)
+           n.lambda=n.lambda, eps=eps, tau=tau, sample.split=sample.split, compare.to.cgm=compare.to.cgm, optimize.cgm=optimize.cgm, compare.to.vdg=compare.to.vdg, proposed.method=proposed.method, inherit.data=inherit.data, auto.save=auto.save)
   sim.active=TRUE
   }
 
@@ -79,6 +79,7 @@ output <- simulate(n=n, d=d, s=s, beta=beta, n.sim=n.sim, p.edge=p.edge, seed=se
   if(sim.active){
     dir.create(folder)
   }
+
   env_bind(output, date=Sys.Date(),
               simulation.path=simulation.path, note=note, ec=ec, folder=folder, file.param.name=file.param.name)
   save(output, file=paste0(folder, '/sim-data.RData'))

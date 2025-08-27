@@ -1,7 +1,7 @@
 #' @export generate
 
 
-generate <- function(lattice=TRUE, n, d, p.edge, s, beta=0.2, seed=0, n.burnin=30000, n.sim=100, keep.every=5,
+generate <- function(lattice=TRUE, n, d, k=2, p.edge, s, beta=0.2, seed=0, n.burnin=30000, n.sim=100, keep.every=5,
                      verbose=FALSE){
 
   if(s > d) stop("Please choose s <= d.")
@@ -75,7 +75,19 @@ generate <- function(lattice=TRUE, n, d, p.edge, s, beta=0.2, seed=0, n.burnin=3
 
 
      ## construct the covariates
-    X <- matrix(runif(n*d,min=-2,max=2),nrow=n,ncol=d)
+
+  if(k < 0){
+    k = -k
+    message("Using uniform bound parameter k=", k, " for covariate generation.")
+  }
+
+  if(k == 0){
+    set.seed(1)
+    k <- rpois(1, 2)
+    message("Using uniform bound parameter k=", k, " for covariate generation.")
+  }
+
+    X <- matrix(runif(n*d,min=-k,max=k),nrow=n,ncol=d)
    # X <- matrix(0, nrow=n, ncol=d)
    # sigma <- katlabutils::generate_cov_ar1(0.2, d)
    # X <- katlabutils::fast_generate_mvn(rep(0,d), sigma, n)

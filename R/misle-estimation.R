@@ -1,9 +1,9 @@
 #' @export simulate
 
-simulate <- function(n, d, s, beta, n.sim, seed=0, lattice=TRUE,  p.edge = 0.5, n.burnin=30000, keep.every=5, verbose=TRUE,
+simulate <- function(n, d, s, beta, k=2, n.sim, seed=0, lattice=TRUE,  p.edge = 0.5, n.burnin=30000, keep.every=5, verbose=FALSE,
             n.lambda=20, eps = .00001, tau=0.8, sample.split=TRUE,
-            compare.to.cgm=FALSE, optimize.cgm=TRUE, compare.to.vdg=TRUE, proposed.method=TRUE, inherit.data=NULL,
-            r.resume=NULL, data.resume=NULL){
+            compare.to.cgm=FALSE, optimize.cgm=TRUE, compare.to.vdg=FALSE, proposed.method=TRUE, inherit.data=NULL,
+            r.resume=NULL, data.resume=NULL, auto.save=FALSE){
 
 
 require(MASS)
@@ -29,7 +29,7 @@ if(is.null(r.resume) & is.null(inherit.data)){
   paste0("Beginning simulation with the following parameters:
         n=",n," | d=",d," | s=",s," | beta=",beta," | n.sim=",n.sim) |> message()
 
-  data <- generate(lattice,n,d,p.edge,s,beta,seed,n.burnin,n.sim,keep.every,verbose)
+  data <- generate(lattice,n,d,k,p.edge,s,beta,seed,n.burnin,n.sim,keep.every,verbose)
   n <- nrow(data$X)
   d <- ncol(data$X)
   A <- data$A
@@ -268,6 +268,9 @@ if(!is.null(inherit.data)){
           }
         }
 
+        # if(verbose & !j%%max(1,floor(d/5)) & (proposed.method | compare.to.cgm)) message( paste0("replication ", r, ": ", j, " covariates complete."))
+      # }
+
         if(verbose & !j%%max(1,floor(d/5)) & (proposed.method | compare.to.cgm)) message( paste0("replication ", r, ": ", j, " covariates complete."))
       }
 
@@ -298,7 +301,7 @@ if(!is.null(inherit.data)){
       if(compare.to.cgm) sqe.cgm[r,] <- (theta.tilde.cgm-theta)^2
 
 
-  if(proposed.method | compare.to.cgm){
+  if(auto.save & proposed.method | compare.to.cgm){
     if(!r%%min(5, ceiling(n.sim/5))){
       results <- current_env()
       file.name <- paste0("n",n,"-d",d,"-beta",beta,"-s",s,"---partial-r=",r,".RData")
@@ -311,8 +314,9 @@ if(!is.null(inherit.data)){
       }
 
     }
-    message('Iteration successful. Increasing r.')
   }
+
+  if(!r%%10) message('Beginning replication number r=', r+1,'.')
   if(compare.to.vdg & !proposed.method & !compare.to.cgm & r < n.sim){
     message('Iteration successful. Increasing r to r=', r+1, '.')
   }
