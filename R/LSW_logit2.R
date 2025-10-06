@@ -142,7 +142,6 @@ Direction_searchtuning<-function(Xc,loading,mu=NULL, resol, maxiter){
 
 
 cgm.inference1<-function(X,y,lambda=NULL){
-a
   X<-as.matrix(X)
 
   ### implement logistic Lasso
