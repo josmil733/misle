@@ -89,6 +89,8 @@ if(is.null(r.resume) & is.null(inherit.data)){
         sparse.ind <- sample(indices.off, min(length(indices.off), 2), replace=FALSE)
       } else sparse.ind <- integer(0)
 
+      covts.record <- c(indices.on, sparse.ind)
+
       if(proposed.method) results.hist <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))),"first.step"=matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
                                  "se" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
                              'ci' = array(NA, dim=c(length(indices.on) + length(sparse.ind), n.sim, 2), dimnames = list(par.no = c(indices.on,sparse.ind), sim = 1:n.sim, bound=c('lower','upper')))
@@ -165,7 +167,7 @@ if(!is.null(inherit.data)){
         theta.tilde.vdg <- fit.lasso$bhat
         sqe.vdg[r,] <- (theta.tilde.vdg-theta)^2
         se.vdg <- fit.lasso$se
-        for(j in 1:d){
+        for(j in 1:covts.record){
         if(j %in% results.hist.vdg$parameter.no){
           results.hist.vdg$value[which(results.hist.vdg$parameter.no==j), r] = theta.tilde.vdg[j]
           results.hist.vdg$se[which(results.hist.vdg$parameter.no==j), r] = se.vdg[j]
@@ -210,7 +212,7 @@ if(!is.null(inherit.data)){
 
       error.flag <- 0
 
-      for(j in 1:d){
+      for(j in covts.record){
         if(proposed.method){
           # debias <- estimate.step2(theta.hat=theta.hat, beta = beta, A.m = A.m,
                                    # X=if(sample.split) X.is.train else X.is,
@@ -245,12 +247,11 @@ if(!is.null(inherit.data)){
         }
 
 
-
-          if(error.flag){
-            wrn <- paste0('Error detected in direction vector computation for ', err.source, ' for replicate r=', r, ' and covariate j=', j, '. Generating new data and attempting this iteration again.')
-            message(wrn)
-            break
-          }
+        if(error.flag){
+          wrn <- paste0('Error detected in direction vector computation for ', err.source, ' for replicate r=', r, ' and covariate j=', j, '. Generating new data and attempting this iteration again.')
+          message(wrn)
+          break
+        }
 
 
 
