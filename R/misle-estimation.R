@@ -226,24 +226,31 @@ if(!is.null(inherit.data)){
           if('error' %in% names(debias)){
             error.flag <- 1
             err.source <- 'MISLE'
+          }
+
         }
 
         if(compare.to.cgm){
-          debias.cgm <- cgm.inference2(theta.hat.cgm, X.cgm.debias, to_01(y.cgm.debias), j)
-          if('error' %in% names(debias.cgm)){
-            error.flag <- 1
-            if('error' %in% names(debias) & !'error' %in% names(debias.cgm)) err.source='MISLE'
-            if('error' %in% names(debias.cgm) & !'error' %in% names(debias)) err.source='CGM'
-            if('error' %in% names(debias) & 'error' %in% names(debias.cgm)) err.source='MISLE and CGM'
-          }
+            debias.cgm <- cgm.inference2(theta.hat.cgm, X.cgm.debias, to_01(y.cgm.debias), j)
+          #   if('error' %in% names(debias.cgm)){
+          #     error.flag <- 1
+          #     if('error' %in% names(debias) & !'error' %in% names(debias.cgm)) err.source='MISLE'
+          #     if('error' %in% names(debias.cgm) & !'error' %in% names(debias)) err.source='CGM'
+          #     if('error' %in% names(debias) & 'error' %in% names(debias.cgm)) err.source='MISLE and CGM'
+          # }
+            if('error' %in% names(debias.cgm)){
+              error.flag <- 1
+              err.source <- 'CGM'
+            }
         }
+
+
 
           if(error.flag){
             wrn <- paste0('Error detected in direction vector computation for ', err.source, ' for replicate r=', r, ' and covariate j=', j, '. Generating new data and attempting this iteration again.')
             message(wrn)
             break
           }
-        }
 
 
 
@@ -274,6 +281,7 @@ if(!is.null(inherit.data)){
 
         if(verbose & !j%%max(1,floor(d/5)) & (proposed.method | compare.to.cgm)) message( paste0("replication ", r, ": ", j, " covariates complete."))
       }
+
 
       if(error.flag){
           data.regen <- regenerate(r,y[,n.sim],X,theta,beta,A)
@@ -322,7 +330,7 @@ if(!is.null(inherit.data)){
     message('Iteration successful. Increasing r to r=', r+1, '.')
   }
       r = r+1
-}
+
 
   start <- r+1 #for ease of debugging
 
@@ -333,6 +341,7 @@ if(!is.null(inherit.data)){
       # test.stat <- sqrt(n)*theta.tilde/sqrt(asymp.var) #under H_0: \theta=0 (2-sided)
       # p.value <- 2*pnorm(test.stat)
       # rejection.counter[r] <- 1*(p.value <= 0.05)
+    }
 
 
   interrupted = 0
