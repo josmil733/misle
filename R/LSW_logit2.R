@@ -36,8 +36,8 @@ Direction_fixedtuning<-function(Xc,loading, mu=NULL){
   v<-Variable(pp+1)
   obj<-1/4*sum((Xc%*%H%*%v)^2)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
   prob<-Problem(Minimize(obj))
-  # result<-CVXR::solve(prob)
-  result <- CVXR::psolve(prob, 'OSQP')
+  result<-CVXR::solve(prob)
+  # result <- CVXR::psolve(prob, 'OSQP')
   if(result$status=='solver_error'){
     message('Solver error encountered.')
   }
@@ -79,8 +79,8 @@ Direction_searchtuning<-function(Xc,loading,mu=NULL, resol, maxiter){
     v<-Variable(pp+1)
     obj<-1/4*sum((Xc%*%H%*%v)^2)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
     prob<-Problem(Minimize(obj))
-    # result<-CVXR::solve(prob)
-    result <- CVXR::psolve(prob, 'OSQP')
+    result<-CVXR::solve(prob)
+    # result <- CVXR::psolve(prob, 'OSQP')
     # print('searchtuning: used psolve this time.')
     #print(result$value)
     # if(result$status != 'solver_error' & rnorm(1)>qnorm(.997)){
