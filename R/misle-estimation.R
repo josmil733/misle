@@ -311,7 +311,7 @@ if(!is.null(inherit.data)){
       if(compare.to.cgm) sqe.cgm[r,] <- (theta.tilde.cgm-theta)^2
 
 
-  if(auto.save & proposed.method | compare.to.cgm){
+  if(auto.save & (proposed.method | compare.to.cgm)){
     if(!r%%min(5, ceiling(n.sim/5))){
       results <- current_env()
       file.name <- paste0("n",n,"-d",d,"-beta",beta,"-s",s,"---partial-r=",r,".RData")
