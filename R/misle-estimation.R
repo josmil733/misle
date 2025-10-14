@@ -198,7 +198,7 @@ if(!is.null(inherit.data)){
           # theta.hat.cgm <- cgm.inference1(X = X.cgm.train, y = to_01(y.cgm.train), lambda = cons2*sqrt(log(d)/n))
           # theta.hat.cgm <- cgm.inference1(X = X.cgm.train, y = y.cgm.train, lambda = cons2*sqrt(2*log(d)/n))
           theta.hat.cgm <- glmnet(X.cgm.train, y.cgm.train,  family = "binomial", alpha = 1, intercept=FALSE,
-                            lambda = cons2*sqrt(2*log(d)/n), standardize=FALSE)$beta
+                            lambda = cons2*sqrt(2*log(d)/n), standardize=FALSE)$beta |> as.vector()
         }
       }
 
