@@ -156,7 +156,7 @@ cgm.inference1<-function(X,y,lambda=NULL){
   }
 
   if(length(lambda==1)){
-    fit = glmnet(X, y,  family = "binomial", alpha = 1, intercept=FALSE,
+    fit = glmnet(2*X, y,  family = "binomial", alpha = 1, intercept=FALSE,
                  lambda = lambda, standardize=F)
     est <- fit$beta
   } else {

@@ -188,15 +188,15 @@ if(!is.null(inherit.data)){
         }
 
       if(compare.to.cgm){
-        y.cgm.train <- y[train.ind.cgm, r]
-        y.cgm.debias <- y[debias.ind.cgm, r]
-        X.cgm.train <- X[train.ind.cgm,,r]
-        X.cgm.debias <- X[debias.ind.cgm,,r]
+        y.cgm.train <- to_01(y[train.ind.cgm, r])
+        y.cgm.debias <- to_01(y[debias.ind.cgm, r])
+        X.cgm.train <- 2*X[train.ind.cgm,,r]
+        X.cgm.debias <- 2*X[debias.ind.cgm,,r]
         if(optimize.cgm){
-          theta.hat.cgm <- cgm.inference1(X = X.cgm.train, y = to_01(y.cgm.train), lambda = NULL)
+          theta.hat.cgm <- cgm.inference1(X = X.cgm.train, y = y.cgm.train, lambda = NULL)
         } else {
           # theta.hat.cgm <- cgm.inference1(X = X.cgm.train, y = to_01(y.cgm.train), lambda = cons2*sqrt(log(d)/n))
-          theta.hat.cgm <- cgm.inference1(X = X.cgm.train, y = to_01(y.cgm.train), lambda = cons2*sqrt(2*log(d)/n))
+          theta.hat.cgm <- cgm.inference1(X = X.cgm.train, y = y.cgm.train, lambda = cons2*sqrt(2*log(d)/n))
         }
       }
 
@@ -235,7 +235,7 @@ if(!is.null(inherit.data)){
         }
 
         if(compare.to.cgm){
-            debias.cgm <- cgm.inference2(theta.hat.cgm, X.cgm.debias, to_01(y.cgm.debias), j)
+            debias.cgm <- cgm.inference2(theta.hat.cgm, X.cgm.debias, y.cgm.debias, j)
           #   if('error' %in% names(debias.cgm)){
           #     error.flag <- 1
           #     if('error' %in% names(debias) & !'error' %in% names(debias.cgm)) err.source='MISLE'
