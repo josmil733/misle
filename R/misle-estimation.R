@@ -1,8 +1,8 @@
 #' @export simulate
 
-simulate <- function(n, d, s, beta, k=2, n.sim, seed=0, lattice=TRUE,  p.edge = 0.5, n.burnin=30000, keep.every=5, verbose=FALSE,
+simulate <- function(n, d, s, beta, k=2, n.sim, seed=0, lattice=TRUE,  p.edge = 0.5, n.burnin=5000, keep.every=5, verbose=FALSE,
             n.lambda=20, eps = .00001, tau=0.8, sample.split=TRUE, p.max.iter=6,
-            compare.to.cgm=FALSE, optimize.cgm=TRUE, compare.to.vdg=FALSE, proposed.method=TRUE, inherit.data=NULL,
+            compare.to.cgm=FALSE, optimize.cgm=FALSE, compare.to.vdg=FALSE, proposed.method=TRUE, inherit.data=NULL,
             r.resume=NULL, data.resume=NULL, auto.save=FALSE){
 
 
@@ -50,7 +50,7 @@ if(is.null(r.resume) & is.null(inherit.data)){
   # A.m <- A[mvc, mvc.c]
   y.mvc <- decomp$y.ordered[1:length(mvc),]
   y.is = decomp$y.ordered[(length(mvc)+1):n,]
-  X.is <- decomp$X.ordered[(length(mvc)+1):n,]
+  X.is <- decomp$X.ordered[(length(mvc)+1):n,,]
 
 
 
@@ -63,9 +63,9 @@ if(is.null(r.resume) & is.null(inherit.data)){
        A.m <- A[mvc, mvc.c[train]]
        dimnames(A.m) <- list(mvc, mvc.c[train])
        y.is.train <- y.is[train,]
-       X.is.train <- X.is[train,]
+       X.is.train <- X.is[train,,]
        y.is.debias <- y.is[debias,]
-       X.is.debias <- X.is[debias,]
+       X.is.debias <- X.is[debias,,]
   } else {
     A.m <- A.m[mvc, mvc.c] #1/29: should cause an error
   }
@@ -89,7 +89,7 @@ if(is.null(r.resume) & is.null(inherit.data)){
         sparse.ind <- sample(indices.off, min(length(indices.off), 2), replace=FALSE)
       } else sparse.ind <- integer(0)
 
-      covts.record <- c(indices.on, sparse.ind)
+      covts.record <- c((if(length(indices.on)<=2) indices.on else indices.on[1:2]), sparse.ind)
 
       if(proposed.method) results.hist <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))),"first.step"=matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
                                  "se" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
@@ -159,8 +159,9 @@ if(!is.null(inherit.data)){
       # Compare to vdg
 
       if(compare.to.vdg){
+        stop("compare.to.vdg temporarily disabled (10/14/2025)")
         if(r==1){
-          fit.lasso <- hdi::lasso.proj(x = X, y = y[,1], standardize = F, family = "binomial", return.Z = TRUE)
+          fit.lasso <- hdi::lasso.proj(x = X[,,r], y = y[,1], standardize = F, family = "binomial", return.Z = TRUE)
           Z <- fit.lasso$Z
         }
         fit.lasso <- hdi::lasso.proj(x = X, y = y[,r], Z = Z, standardize = F, family = "binomial", return.Z = FALSE)
@@ -181,7 +182,7 @@ if(!is.null(inherit.data)){
       if(proposed.method){
         theta.hat <- estimate.step1(grid.lambda=list(from=0.01, to=0.1, length.out=20),
                                     d=d, eps=eps, y.mvc = y.mvc[,r], y=if(sample.split) y.is.train[,r] else y.is[,r],
-                                    X=if(sample.split) X.is.train else X.is,
+                                    X=if(sample.split) X.is.train[,,r] else X.is[,,r],
                                     beta = beta, A.m = A.m, mvc.c = mvc.c,
                                     tau=0.8)
         }
@@ -189,12 +190,13 @@ if(!is.null(inherit.data)){
       if(compare.to.cgm){
         y.cgm.train <- y[train.ind.cgm, r]
         y.cgm.debias <- y[debias.ind.cgm, r]
-        X.cgm.train <- X[train.ind.cgm,]
-        X.cgm.debias <- X[debias.ind.cgm,]
+        X.cgm.train <- X[train.ind.cgm,,r]
+        X.cgm.debias <- X[debias.ind.cgm,,r]
         if(optimize.cgm){
           theta.hat.cgm <- cgm.inference1(X = X.cgm.train, y = to_01(y.cgm.train), lambda = NULL)
         } else {
-          theta.hat.cgm <- cgm.inference1(X = X.cgm.train, y = to_01(y.cgm.train), lambda = cons2*sqrt(log(d)/n))
+          # theta.hat.cgm <- cgm.inference1(X = X.cgm.train, y = to_01(y.cgm.train), lambda = cons2*sqrt(log(d)/n))
+          theta.hat.cgm <- cgm.inference1(X = X.cgm.train, y = to_01(y.cgm.train), lambda = cons2*sqrt(2*log(d)/n))
         }
       }
 
@@ -220,7 +222,7 @@ if(!is.null(inherit.data)){
                                    # y.mvc = y.mvc[,r], predictor=j)
 
           debias <- estimate.step2(theta.hat=theta.hat, beta = beta, A.m = A.m,
-                                   X=if(sample.split) X.is.debias else X.is,
+                                   X=if(sample.split) X.is.debias[,,r] else X.is[,,r],
                                    y=if(sample.split) to_01(y.is.debias[,r]) else to_01(y.is[,r]),
                                    y.mvc = y.mvc[,r], predictor=j,
                                    p.max.iter=p.max.iter)
@@ -277,25 +279,28 @@ if(!is.null(inherit.data)){
           }
         }
 
-        # if(verbose & !j%%max(1,floor(d/5)) & (proposed.method | compare.to.cgm)) message( paste0("replication ", r, ": ", j, " covariates complete."))
-      # }
-
-        if(verbose & !j%%max(1,floor(d/5)) & (proposed.method | compare.to.cgm)) message( paste0("replication ", r, ": ", j, " covariates complete."))
-      }
 
 
       if(error.flag){
-          data.regen <- regenerate(r,y[,n.sim],X,theta,beta,A)
+          data.regen <- regenerate(r,y[,n.sim])
           data$Y[,r] = data.regen$y
+          data$X[,,r] = data.regen$X
           y.ordered <- numeric(n)
           y.ordered[1:length(mvc)] <- data.regen$y[mvc]
           y.ordered[(length(mvc)+1):n] <- data.regen$y[mvc.c]
           names(y.ordered) <- c(mvc, mvc.c)
           y.mvc[,r] <- y.ordered[1:length(mvc)]
           y.is[,r] = y.ordered[(length(mvc)+1):n]
+          X.ordered <- matrix(NA, nrow=n, ncol=d)
+          X.ordered[1:length(mvc),] <- data.regen$X[mvc,]
+          X.ordered[(length(mvc)+1):n,] <- data.regen$X[mvc.c,]
+          rownames(X.ordered) <- c(mvc, mvc.c)
+          X.is[,,r] = X.ordered[(length(mvc)+1):n,]
           if(sample.split){
             y.is.train[,r] <- y.is[train,r]
             y.is.debias[,r] <- y.is[setdiff(1:length(mvc.c), train),r]
+            X.is.train[,,r] <- X.is[train,,r]
+            X.is.debias[,,r] <- X.is[setdiff(1:length(mvc.c), train),,r]
           }
           next
       }
@@ -309,6 +314,12 @@ if(!is.null(inherit.data)){
       }
 
       if(compare.to.cgm) sqe.cgm[r,] <- (theta.tilde.cgm-theta)^2
+
+
+      # if(verbose & !j%%max(1,floor(d/5)) & (proposed.method | compare.to.cgm)) message( paste0("replication ", r, ": ", j, " covariates complete."))
+      # }
+
+      }
 
 
   if(auto.save & (proposed.method | compare.to.cgm)){
@@ -326,14 +337,10 @@ if(!is.null(inherit.data)){
     }
   }
 
-  if(!r%%10) message('Beginning replication number r=', r+1,'.')
-  if(compare.to.vdg & !proposed.method & !compare.to.cgm & r < n.sim){
-    message('Iteration successful. Increasing r to r=', r+1, '.')
-  }
-      r = r+1
+  if(verbose & !r%%5) message( paste0("replication ", r, " complete."))
 
-
-  start <- r+1 #for ease of debugging
+  r = r+1
+  start <- r #for ease of debugging
 
 
       ## Use (e.g.) Javanmard and Montanari 2014 as starting point for our debiasing approach

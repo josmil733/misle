@@ -1,8 +1,8 @@
 #' @export report
 
-report <- function(n, d, s, beta, k=2, n.sim, p.edge=NULL, seed=0, lattice=TRUE, n.burnin=30000, keep.every=5, verbose=FALSE,
+report <- function(n, d, s, beta, k=2, n.sim, p.edge=NULL, seed=0, lattice=TRUE, n.burnin=5000, keep.every=5, verbose=FALSE,
             n.lambda=20, eps = .00001, tau=0.8, sample.split=TRUE, p.max.iter=6,
-            compare.to.cgm=FALSE, optimize.cgm=TRUE, compare.to.vdg=FALSE, proposed.method=TRUE, inherit.data=NULL, auto.save=FALSE,
+            compare.to.cgm=FALSE, optimize.cgm=FALSE, compare.to.vdg=FALSE, proposed.method=TRUE, inherit.data=NULL, auto.save=FALSE,
             simulation.path=NULL, note=NULL, ec=FALSE, results.dir=getwd()
             ){
 

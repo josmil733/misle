@@ -36,7 +36,7 @@ decompose <- function(A, A.build, y, X, lattice){
    rownames(y.ordered) <- c(mvc, mvc.c)
 
 
-   X.ordered <- X[c(mvc,mvc.c),]
+   X.ordered <- X[c(mvc,mvc.c),,]
    rownames(X.ordered) <- c(mvc, mvc.c)
 
   # will need to add arguments to get this part to work
