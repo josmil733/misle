@@ -6,7 +6,7 @@ generate <- function(lattice=TRUE, n, d, k=2, p.edge, s, beta=0.2, seed=0, n.bur
 
   if(s > d) stop("Please choose s <= d.")
 
-  # lattice = TRUE; n=50; d=20; k=2; beta=0.2; s=2; seed=0; n.burnin=5000; n.sim=10; keep.every=5; verbose=FALSE
+  lattice = TRUE; n=50; d=20; k=2; beta=0.2; s=2; seed=0; n.burnin=5000; n.sim=10; keep.every=5; verbose=FALSE; sample.split=TRUE; data.resume=NULL; r.resume=NULL; auto.save=FALSE; eps=1e-5; tau=0.8; seed=0;n.lambda=20; p.max.iter=6;compare.to.vdg=FALSE;proposed.method=FALSE;compare.to.cgm=TRUE
 
 # source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/mvc.R")
 

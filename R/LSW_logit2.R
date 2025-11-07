@@ -107,7 +107,7 @@ Direction_searchtuning<-function(Xc,loading,mu=NULL, resol, maxiter){
         incr = 1;
         mu=mu*resol;
       }
-    }else{
+    } else{
       if(incr == 1){ ### if the tuning parameter is increased in the last step
         if(cvxr_status=="optimal"){
           lamstop = 1;

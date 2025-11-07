@@ -91,15 +91,19 @@ if(is.null(r.resume) & is.null(inherit.data)){
 
       covts.record <- c((if(length(indices.on)<=2) indices.on else indices.on[1:2]), sparse.ind)
 
-      if(proposed.method) results.hist <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))),"first.step"=matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+      if(proposed.method){
+        results.hist <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))),"first.step"=matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
                                  "se" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
                              'ci' = array(NA, dim=c(length(indices.on) + length(sparse.ind), n.sim, 2), dimnames = list(par.no = c(indices.on,sparse.ind), sim = 1:n.sim, bound=c('lower','upper')))
                              )
+      }
 
-      if(compare.to.cgm) results.hist.cgm <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))), "first.step"=matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+      if(compare.to.cgm){
+        results.hist.cgm <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))), "first.step"=matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
                                  "se" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
                                  'ci' = array(NA, dim=c(length(indices.on) + length(sparse.ind), n.sim, 2), dimnames = list(par.no = c(indices.on,sparse.ind), sim = 1:n.sim, bound=c('lower','upper')))
                                  )
+      }
 
       if(compare.to.cgm){
 
@@ -111,10 +115,12 @@ if(is.null(r.resume) & is.null(inherit.data)){
         debias.ind.cgm <- setdiff(1:n, train.ind.cgm)
       }
 
-      if(compare.to.vdg) results.hist.vdg <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
+      if(compare.to.vdg){
+        results.hist.vdg <- tibble("parameter.no" = c(indices.on,sparse.ind), "is.nonzero" = c(rep(TRUE, length(indices.on)), rep(FALSE, length(sparse.ind))), "value" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
                                                     "se" = matrix(NA, nrow=length(indices.on)+length(sparse.ind), ncol=n.sim),
                                                     'ci' = array(NA, dim=c(length(indices.on) + length(sparse.ind), n.sim, 2), dimnames = list(par.no = c(indices.on,sparse.ind), sim = 1:n.sim, bound=c('lower','upper')))
       )
+    }
 
 }
 
@@ -283,30 +289,6 @@ if(!is.null(inherit.data)){
 
 
 
-      if(error.flag){
-          data.regen <- regenerate(r,y[,n.sim])
-          data$Y[,r] = data.regen$y
-          data$X[,,r] = data.regen$X
-          y.ordered <- numeric(n)
-          y.ordered[1:length(mvc)] <- data.regen$y[mvc]
-          y.ordered[(length(mvc)+1):n] <- data.regen$y[mvc.c]
-          names(y.ordered) <- c(mvc, mvc.c)
-          y.mvc[,r] <- y.ordered[1:length(mvc)]
-          y.is[,r] = y.ordered[(length(mvc)+1):n]
-          X.ordered <- matrix(NA, nrow=n, ncol=d)
-          X.ordered[1:length(mvc),] <- data.regen$X[mvc,]
-          X.ordered[(length(mvc)+1):n,] <- data.regen$X[mvc.c,]
-          rownames(X.ordered) <- c(mvc, mvc.c)
-          X.is[,,r] = X.ordered[(length(mvc)+1):n,]
-          if(sample.split){
-            y.is.train[,r] <- y.is[train,r]
-            y.is.debias[,r] <- y.is[setdiff(1:length(mvc.c), train),r]
-            X.is.train[,,r] <- X.is[train,,r]
-            X.is.debias[,,r] <- X.is[setdiff(1:length(mvc.c), train),,r]
-          }
-          next
-      }
-
       if(proposed.method){
         p.values <- 2*pnorm(-abs(sqrt(n)*theta.tilde/se))
         # debias <- deb.lasso(x=X.is, y=y.is, lasso_est=theta.hat, inference=TRUE)
@@ -321,6 +303,32 @@ if(!is.null(inherit.data)){
       # if(verbose & !j%%max(1,floor(d/5)) & (proposed.method | compare.to.cgm)) message( paste0("replication ", r, ": ", j, " covariates complete."))
       # }
 
+      }
+
+
+
+      if(error.flag){
+        data.regen <- regenerate(r,y[,n.sim])
+        data$Y[,r] = data.regen$y
+        data$X[,,r] = data.regen$X
+        y.ordered <- numeric(n)
+        y.ordered[1:length(mvc)] <- data.regen$y[mvc]
+        y.ordered[(length(mvc)+1):n] <- data.regen$y[mvc.c]
+        names(y.ordered) <- c(mvc, mvc.c)
+        y.mvc[,r] <- y.ordered[1:length(mvc)]
+        y.is[,r] = y.ordered[(length(mvc)+1):n]
+        X.ordered <- matrix(NA, nrow=n, ncol=d)
+        X.ordered[1:length(mvc),] <- data.regen$X[mvc,]
+        X.ordered[(length(mvc)+1):n,] <- data.regen$X[mvc.c,]
+        rownames(X.ordered) <- c(mvc, mvc.c)
+        X.is[,,r] = X.ordered[(length(mvc)+1):n,]
+        if(sample.split){
+          y.is.train[,r] <- y.is[train,r]
+          y.is.debias[,r] <- y.is[setdiff(1:length(mvc.c), train),r]
+          X.is.train[,,r] <- X.is[train,,r]
+          X.is.debias[,,r] <- X.is[setdiff(1:length(mvc.c), train),,r]
+        }
+        next
       }
 
 
@@ -339,7 +347,7 @@ if(!is.null(inherit.data)){
     }
   }
 
-  if(verbose & !r%%5) message( paste0("replication ", r, " complete."))
+  if(verbose & !r%%5) message( paste0("replication ", r, " complete.") )
 
   r = r+1
   start <- r #for ease of debugging
