@@ -7,11 +7,6 @@ simulate <- function(n, d, s, beta, k=2, n.sim, seed=0, lattice=TRUE,  p.edge = 
 
 
 
-  n=200; d=20; s=4; beta=0.2; k=2; n.sim=7; seed=0; lattice=TRUE;  p.edge = 0.5; n.burnin=5000; keep.every=5; verbose=FALSE;
-  n.lambda=20; eps = .00001; tau=0.8; sample.split=TRUE; p.max.iter=6;
-  compare.to.cgm=FALSE; optimize.cgm=FALSE; compare.to.vdg=FALSE; proposed.method=TRUE; inherit.data=NULL;
-  r.resume=NULL; data.resume=NULL; auto.save=FALSE
-
 
 require(MASS)
 require(glmnet)
