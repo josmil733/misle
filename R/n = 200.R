@@ -1,0 +1,26 @@
+n = 200
+d = 10
+k = 2
+beta = 0
+s = 2
+n.sim = 10
+
+seed = 0
+lattice = TRUE
+p.edge = 0.5
+n.burnin = 5000
+keep.every = 5
+verbose = TRUE
+n.lambda = 20
+eps = .00001
+tau = 0.8
+sample.split = TRUE
+p.max.iter = 6
+compare.to.cgm = TRUE
+optimize.cgm = FALSE
+compare.to.vdg = FALSE
+proposed.method = TRUE
+inherit.data = NULL
+r.resume = NULL
+data.resume = NULL
+auto.save = FALSE

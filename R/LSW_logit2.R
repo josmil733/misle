@@ -3,7 +3,6 @@
 #' @export cgm.inference1
 #' @export cgm.inference2
 
-
 library(MASS)
 library(CVXR)
 library(AER)
@@ -11,12 +10,11 @@ library(Matrix)
 library(glmnet)
 
 
-
-f = function(x){
-  exp(x)/(1+exp(x))
+f = function(x) {
+  exp(x) / (1 + exp(x))
 }
-fp = function(x){
-  exp(x)/(1+exp(x))^2
+fp = function(x) {
+  exp(x) / (1 + exp(x))^2
 }
 
 getmode <- function(v) {
@@ -24,21 +22,26 @@ getmode <- function(v) {
   uniqv[which.max(tabulate(match(v, uniqv)))]
 }
 
-Direction_fixedtuning<-function(Xc,loading, mu=NULL){
+Direction_fixedtuning <- function(Xc, loading, mu = NULL) {
   error.code <- 0
-  pp<-ncol(Xc)
-  n<-nrow(Xc)
-  if(is.null(mu)){
-    mu<-sqrt(2.01*log(pp)/n)
+  pp <- ncol(Xc)
+  n <- nrow(Xc)
+  if (is.null(mu)) {
+    mu <- sqrt(2.01 * log(pp) / n)
   }
-  loading.norm<-sqrt(sum(loading^2))
-  H<-cbind(loading/loading.norm,diag(1,pp))
-  v<-Variable(pp+1)
-  obj<-1/4*sum((Xc%*%H%*%v)^2)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
-  prob<-Problem(Minimize(obj))
-  result<-CVXR::solve(prob)
+  loading.norm <- sqrt(sum(loading^2))
+  H <- cbind(loading / loading.norm, diag(1, pp))
+  v <- Variable(pp + 1)
+  obj <- 1 /
+    4 *
+    sum((Xc %*% H %*% v)^2) /
+    n +
+    sum((loading / loading.norm) * (H %*% v)) +
+    mu * sum(abs(v))
+  prob <- Problem(Minimize(obj))
+  result <- CVXR::solve(prob)
   # result <- CVXR::psolve(prob, 'OSQP')
-  if(result$status=='solver_error'){
+  if (result$status == 'solver_error') {
     message('Solver error encountered.')
   }
   # print('searchtuning: used psolve this time.')
@@ -47,39 +50,44 @@ Direction_fixedtuning<-function(Xc,loading, mu=NULL){
   #   result$status='solver_error'
   #   message('Solver error induced by random draw.')
   # }
-  if(result$status=='solver_error'){
-    direction <- numeric(pp+1)
-    returnList <- list("proj"=direction, error.code=1)
+  if (result$status == 'solver_error') {
+    direction <- numeric(pp + 1)
+    returnList <- list("proj" = direction, error.code = 1)
     return(returnList)
   }
-  opt.sol<-result$getValue(v)
-  direction<-(-1)/2*(opt.sol[-1]+opt.sol[1]*loading/loading.norm)
-  returnList <- list("proj"=direction, error.code=error.code)
+  opt.sol <- result$getValue(v)
+  direction <- (-1) / 2 * (opt.sol[-1] + opt.sol[1] * loading / loading.norm)
+  returnList <- list("proj" = direction, error.code = error.code)
   return(returnList)
 }
 
-Direction_searchtuning<-function(Xc,loading,mu=NULL, resol, maxiter){
-  pp<-ncol(Xc)
-  n<-nrow(Xc)
-  tryno = 1;
-  opt.sol = rep(0,pp);
-  lamstop = 0;
-  cvxr_status = "optimal";
+Direction_searchtuning <- function(Xc, loading, mu = NULL, resol, maxiter) {
+  pp <- ncol(Xc)
+  n <- nrow(Xc)
+  tryno = 1
+  opt.sol = rep(0, pp)
+  lamstop = 0
+  cvxr_status = "optimal"
 
-  mu = sqrt(2.01*log(pp)/n);
+  mu = sqrt(2.01 * log(pp) / n)
   #mu.initial= mu;
   error.code <- 0
-  while (lamstop == 0 && tryno < maxiter){
+  while (lamstop == 0 && tryno < maxiter) {
     ###### This iteration is to find a good tuning parameter
     #print(mu);
-    lastv = opt.sol;
-    lastresp = cvxr_status;
-    loading.norm<-sqrt(sum(loading^2))
-    H<-cbind(loading/loading.norm,diag(1,pp))
-    v<-Variable(pp+1)
-    obj<-1/4*sum((Xc%*%H%*%v)^2)/n+sum((loading/loading.norm)*(H%*%v))+mu*sum(abs(v))
-    prob<-Problem(Minimize(obj))
-    result<-CVXR::solve(prob)
+    lastv = opt.sol
+    lastresp = cvxr_status
+    loading.norm <- sqrt(sum(loading^2))
+    H <- cbind(loading / loading.norm, diag(1, pp))
+    v <- Variable(pp + 1)
+    obj <- 1 /
+      4 *
+      sum((Xc %*% H %*% v)^2) /
+      n +
+      sum((loading / loading.norm) * (H %*% v)) +
+      mu * sum(abs(v))
+    prob <- Problem(Minimize(obj))
+    result <- CVXR::solve(prob)
     # result <- CVXR::psolve(prob, 'OSQP')
     # print('searchtuning: used psolve this time.')
     #print(result$value)
@@ -87,169 +95,215 @@ Direction_searchtuning<-function(Xc,loading,mu=NULL, resol, maxiter){
     #   result$status='solver_error'
     #   message('Solver error induced by random draw.')
     # }
-    if(result$status=='solver_error'){
-      returnList <- list("proj"=numeric(pp+1),
-                     "step"=NA,
-                     'error.code'=1)
-    return(returnList)
+    if (result$status == 'solver_error') {
+      returnList <- list(
+        "proj" = numeric(pp + 1),
+        "step" = NA,
+        'error.code' = 1
+      )
+      return(returnList)
     }
-    opt.sol<-result$getValue(v)
-    cvxr_status<-result$status
+    opt.sol <- result$getValue(v)
+    cvxr_status <- result$status
     #print(cvxr_status)
-    if(tryno==1){
-      if(cvxr_status=="optimal"){
-        incr = 0;
-        mu=mu/resol;
-        temp.vec<-(-1)/2*(opt.sol[-1]+opt.sol[1]*loading/loading.norm)
-        initial.sd<-sqrt(sum((Xc%*% temp.vec)^2)/(n)^2)*loading.norm
-        temp.sd<-initial.sd
-      }else{
-        incr = 1;
-        mu=mu*resol;
+    if (tryno == 1) {
+      if (cvxr_status == "optimal") {
+        incr = 0
+        mu = mu / resol
+        temp.vec <- (-1) /
+          2 *
+          (opt.sol[-1] + opt.sol[1] * loading / loading.norm)
+        initial.sd <- sqrt(sum((Xc %*% temp.vec)^2) / (n)^2) * loading.norm
+        temp.sd <- initial.sd
+      } else {
+        incr = 1
+        mu = mu * resol
       }
-    } else{
-      if(incr == 1){ ### if the tuning parameter is increased in the last step
-        if(cvxr_status=="optimal"){
-          lamstop = 1;
-        }else{
-          mu=mu*resol;
+    } else {
+      if (incr == 1) {
+        ### if the tuning parameter is increased in the last step
+        if (cvxr_status == "optimal") {
+          lamstop = 1
+        } else {
+          mu = mu * resol
         }
-      }else{
-        if(cvxr_status=="optimal"&&temp.sd<3*initial.sd){
-          mu = mu/resol;
-          temp.vec<-(-1)/2*(opt.sol[-1]+opt.sol[1]*loading/loading.norm)
-          temp.sd<-sqrt(sum((Xc%*% temp.vec)^2)/(n)^2)*loading.norm
+      } else {
+        if (cvxr_status == "optimal" && temp.sd < 3 * initial.sd) {
+          mu = mu / resol
+          temp.vec <- (-1) /
+            2 *
+            (opt.sol[-1] + opt.sol[1] * loading / loading.norm)
+          temp.sd <- sqrt(sum((Xc %*% temp.vec)^2) / (n)^2) * loading.norm
           #print(temp.sd)
-        }else{
-          mu=mu*resol;
-          opt.sol=lastv;
-          lamstop=1;
-          tryno=tryno-1
+        } else {
+          mu = mu * resol
+          opt.sol = lastv
+          lamstop = 1
+          tryno = tryno - 1
         }
       }
     }
-    tryno = tryno + 1;
+    tryno = tryno + 1
   }
 
-  direction<-(-1)/2*(opt.sol[-1]+opt.sol[1]*loading/loading.norm)
-  step<-tryno-1
+  direction <- (-1) / 2 * (opt.sol[-1] + opt.sol[1] * loading / loading.norm)
+  step <- tryno - 1
   # print(step)
-  returnList <- list("proj"=direction,
-                     "step"=step,
-                     'error.code'=error.code)
+  returnList <- list(
+    "proj" = direction,
+    "step" = step,
+    'error.code' = error.code
+  )
   return(returnList)
 }
 
 
-cgm.inference1<-function(X,y,lambda=NULL){
-  X<-as.matrix(X)
+cgm.inference1 <- function(X, y, lambda = NULL) {
+  X <- as.matrix(X)
 
   ### implement logistic Lasso
 
-  if(is.null(lambda)){
-    fit.cv <- cv.glmnet(X,y,family='binomial',intercept=FALSE)
-    best.lambda.ind <- which(fit.cv$lambda==fit.cv$lambda.min)
-    est <- fit.cv$glmnet.fit$beta[,best.lambda.ind]
+  if (is.null(lambda)) {
+    fit.cv <- cv.glmnet(X, y, family = 'binomial', intercept = FALSE)
+    best.lambda.ind <- which(fit.cv$lambda == fit.cv$lambda.min)
+    est <- fit.cv$glmnet.fit$beta[, best.lambda.ind]
     # best.lambda <- fit$lambda[which.max(fit$dev.ratio)]
     # fit.opt <- glmnet(X, y, family='binomial', alpha=1, intercept=FALSE, lambda=best.lambda)
-    return(theta.hat=as.vector(est))
+    return(theta.hat = as.vector(est))
   }
 
-  if(length(lambda==1)){
-    fit = glmnet(X, y,  family = "binomial", alpha = 1, intercept=FALSE,
-                 lambda = lambda, standardize=F)
+  if (length(lambda == 1)) {
+    fit = glmnet(
+      X,
+      y,
+      family = "binomial",
+      alpha = 1,
+      intercept = FALSE,
+      lambda = lambda,
+      standardize = F
+    )
     est <- fit$beta
   } else {
-    stop("Please choose either a single value for lambda, or choose lambda=NULL.")
+    stop(
+      "Please choose either a single value for lambda, or choose lambda=NULL."
+    )
   }
 
-  return(theta.hat=as.vector(est))
+  return(theta.hat = as.vector(est))
 }
 
-cgm.inference2<-function(theta.hat, X,y,predictor){
+cgm.inference2 <- function(theta.hat, X, y, predictor) {
   ### Option 1: search tuning parameter with steps determined by the ill conditioned case (n=p/2)
   ### Option 2: search tuning parameter with maximum 10 steps.
   ####### Option 3: fixed tuning parameter and this is not recommended without exploring the tuning parameter selection
 
   d <- ncol(X)
 
-  if(!(predictor %in% (1:d))) stop("predictor should be an integer between 1 and d.")
+  if (!(predictor %in% (1:d))) {
+    stop("predictor should be an integer between 1 and d.")
+  }
 
-  mu=NULL
-  step=NULL
-  resol=1.5
-  cons=2.01
-  maxiter=6
+  mu = NULL
+  step = NULL
+  resol = 1.5
+  cons = 2.01
+  maxiter = 6
 
   n <- length(y) #2/13: should this be changed?
 
-    loading = rep(0,d)
-    loading[predictor]=1
-    lin.pred.hat=X%*%(theta.hat)
-    X.weight = diag(c(sqrt(fp(lin.pred.hat)*w(lin.pred.hat)))) %*% X
+  loading = rep(0, d)
+  loading[predictor] = 1
+  lin.pred.hat = X %*% (theta.hat)
+  X.weight = diag(c(sqrt(fp(lin.pred.hat) * w(lin.pred.hat)))) %*% X
   #####################################################################################################
   ################## Correction step
 
-  if ((n>=6*d)){
-    sigma.hat <- (1/n)*(t(X.weight)%*%X.weight);
+  if ((n >= 6 * d)) {
+    sigma.hat <- (1 / n) * (t(X.weight) %*% X.weight)
     tmp <- eigen(sigma.hat)
-    tmp <- min(tmp$values)/max(tmp$values)
-  }else{
+    tmp <- min(tmp$values) / max(tmp$values)
+  } else {
     tmp <- 0
   }
 
-  if ((n>=6*d)&&(tmp>=1e-4)){
-    direction <- solve(sigma.hat)%*%loading
-  }else{
-    if(n>0.5*d){
+  if ((n >= 6 * d) && (tmp >= 1e-4)) {
+    direction <- solve(sigma.hat) %*% loading
+  } else {
+    if (n > 0.5 * d) {
       ### for option 1
-      if(is.null(step)){
-        step.vec<-rep(NA,3)
-        for(t in 1:3){
-          index.sel<-sample(1:n,size=ceiling(0.5*min(n,d)), replace=FALSE) #sample smaller sample
+      if (is.null(step)) {
+        step.vec <- rep(NA, 3)
+        for (t in 1:3) {
+          index.sel <- sample(
+            1:n,
+            size = ceiling(0.5 * min(n, d)),
+            replace = FALSE
+          ) #sample smaller sample
 
-          Direction.Est.temp<-Direction_searchtuning(X.weight[index.sel,],loading,mu=NULL, resol, maxiter)
-          if(Direction.Est.temp$error.code){
-            return(list(error=1))
+          Direction.Est.temp <- Direction_searchtuning(
+            X.weight[index.sel, ],
+            loading,
+            mu = NULL,
+            resol,
+            maxiter
+          )
+          if (Direction.Est.temp$error.code) {
+            return(list(error = 1))
           }
-          step.vec[t]<-Direction.Est.temp$step
+          step.vec[t] <- Direction.Est.temp$step
         }
-        step<-getmode(step.vec)
+        step <- getmode(step.vec)
       }
       # print(paste("step is", step))
-      Direction.Est<-Direction_fixedtuning(X.weight,loading,mu=sqrt(cons*log(d)/n)*resol^{-(step-1)})
-      if(Direction.Est$error.code){
-        return(list(error=1))
+      Direction.Est <- Direction_fixedtuning(
+        X.weight,
+        loading,
+        mu = sqrt(cons * log(d) / n) *
+          resol^{
+            -(step - 1)
+          }
+      )
+      if (Direction.Est$error.code) {
+        return(list(error = 1))
       }
-    }else{
+    } else {
       ### for option 2
-      Direction.Est<-Direction_searchtuning(X.weight,loading,mu=NULL, resol, maxiter)
-      if(Direction.Est$error.code){
-        return(list(error=1))
+      Direction.Est <- Direction_searchtuning(
+        X.weight,
+        loading,
+        mu = NULL,
+        resol,
+        maxiter
+      )
+      if (Direction.Est$error.code) {
+        return(list(error = 1))
       }
-      step<-Direction.Est$step
+      step <- Direction.Est$step
       # print(paste("step is", step))
     }
-    direction<-Direction.Est$proj
+    direction <- Direction.Est$proj
   }
 
-   weighed.residual=(y - f(lin.pred.hat))*w(lin.pred.hat)
+  weighed.residual = (y - f(lin.pred.hat)) * w(lin.pred.hat)
 
-   correction = sum((X%*%direction)*weighed.residual)/n;
-   debias.est=theta.hat[predictor]+correction
+  correction = sum((X %*% direction) * weighed.residual) / n
+  debias.est = theta.hat[predictor] + correction
 
-   X.weight2 = diag(c(w(lin.pred.hat)*sqrt(f(lin.pred.hat)*(1-f(lin.pred.hat))))) %*% X
-   # se<-sqrt(mean((X.weight2%*%direction)^2))/sqrt(n)
-   se<-mean( (X.weight2%*%direction)^2 ) |> sqrt()
+  X.weight2 = diag(c(
+    w(lin.pred.hat) * sqrt(f(lin.pred.hat) * (1 - f(lin.pred.hat)))
+  )) %*%
+    X
+  # se<-sqrt(mean((X.weight2%*%direction)^2))/sqrt(n)
+  #  se<-mean( (X.weight2%*%direction)^2 ) |> sqrt()
+  se <- (mean((X.weight2 %*% direction)^2) / n) |> sqrt() #changed 1/7/2026 in accord with estimate.step2
 
-
-
-  returnList <- list("theta.tilde" = debias.est,
-                     "j" = predictor,
-                     "se" = se,
-                     "u.hat"=direction,
-                     "step"=step,
-                     "theta.hat"=theta.hat
+  returnList <- list(
+    "theta.tilde" = debias.est,
+    "j" = predictor,
+    "se" = se,
+    "u.hat" = direction |> c(),
+    "step" = step,
+    "theta.hat" = theta.hat
   )
   return(returnList)
 }
