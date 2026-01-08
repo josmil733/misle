@@ -91,7 +91,8 @@ After these, I show coverage statistics for 95% symmetric confidence intervals f
 ```{r}
 results.env <- new_environment(list())
 for(m in methods.detected){
-  env_bind(results.env, !!sym(paste0("results.hist.", m)) := env_get(.GlobalEnv, paste0("results.hist.", m)) )
+  # env_bind(results.env, !!sym(paste0("results.hist.", m)) := env_get(.GlobalEnv, paste0("results.hist.", m)) )
+    env_bind(results.env, !!sym(paste0("results.hist.", m)) := env_get(current_env(), paste0("results.hist.", m)) )
 }
 ```
 

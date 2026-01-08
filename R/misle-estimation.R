@@ -148,13 +148,13 @@ simulate <- function(
     covts.on <- (if (length(indices.on) <= 2) indices.on else indices.on[1:2])
     covts.record <- c(covts.on, sparse.ind)
 
-    methods <- c("proposed", "CGM", "vdG")
-    methods.detected <- hutils::if_else(
-      c(proposed.method, compare.to.cgm, compare.to.vdg),
-      methods,
-      ""
-    ) |>
-      str_subset(".")
+    # methods <- c("proposed", "CGM", "vdG")
+    # methods.detected <- hutils::if_else(
+    #   c(proposed.method, compare.to.cgm, compare.to.vdg),
+    #   methods,
+    #   ""
+    # ) |>
+    #   str_subset(".")
 
     # results.data = array(
     #   -1,
@@ -394,8 +394,10 @@ simulate <- function(
     if (compare.to.cgm) {
       y.cgm.train <- to_01(y[train.ind.cgm, r])
       y.cgm.debias <- to_01(y[debias.ind.cgm, r])
-      X.cgm.train <- 2 * X[train.ind.cgm, , r]
-      X.cgm.debias <- 2 * X[debias.ind.cgm, , r]
+      # X.cgm.train <- 2 * X[train.ind.cgm, , r]
+      # X.cgm.debias <- 2 * X[debias.ind.cgm, , r]
+      X.cgm.train <- X[train.ind.cgm, , r]
+      X.cgm.debias <- X[debias.ind.cgm, , r]
       if (optimize.cgm) {
         theta.hat.cgm <- cgm.inference1(
           X = X.cgm.train,
