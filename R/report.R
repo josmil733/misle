@@ -133,13 +133,13 @@ report <- function(
   env_coalesce(current_env(), output)
 
   directory <- paste0(results.dir, "/")
-  # methods <- c("proposed", "CGM", "vdG")
-  # methods.detected <- hutils::if_else(
-  #   c(proposed.method, compare.to.cgm, compare.to.vdg),
-  #   methods,
-  #   ""
-  # ) |>
-  #   str_subset(".")
+  methods <- c("proposed", "CGM", "vdG")
+  methods.detected <- hutils::if_else(
+    c(proposed.method, compare.to.cgm, compare.to.vdg),
+    methods,
+    ""
+  ) |>
+    str_subset(".")
 
   # file.param.name <- paste0('n',n, '-d',d, '-beta',beta, '-s', s)
   file.param.name <- paste0(

@@ -209,7 +209,8 @@ simulate <- function(
 
     if (compare.to.cgm) {
       cons = 0.05
-      cons2 = 0.01 #not sure how to pick these.
+      # cons2 = 0.01 #not sure how to pick these.
+      cons2 = 0.3 #based on CGM real_data7.R, added on 1/9/2026
       # if(d==400){cons=0.5;cons2=0.07}
       # if(d==700){cons=0.85;cons2=0.05}
       # if(d>800){cons=2;cons2=0.04}
@@ -277,7 +278,8 @@ simulate <- function(
     )
 
     cons = 0.05
-    cons2 = 0.01 #not sure how to pick these.
+    # cons2 = 0.01 #not sure how to pick these.
+    cons2 = 0.3 #based on CGM real_data7.R, added on 1/9/2026
     # if(d==400){cons=0.5;cons2=0.07}
     # if(d==700){cons=0.85;cons2=0.05}
     # if(d>800){cons=2;cons2=0.04}
@@ -413,7 +415,8 @@ simulate <- function(
           family = "binomial",
           alpha = 1,
           intercept = FALSE,
-          lambda = cons2 * sqrt(2 * log(d) / n),
+          # lambda = cons2 * sqrt(2 * log(d) / n),
+          lambda = cons2 * sqrt(log(d) / n), #changed 1/9/2026 in accord with real_data7.R from CGM
           standardize = FALSE
         )$beta |>
           as.vector()
@@ -465,6 +468,17 @@ simulate <- function(
           y.cgm.debias,
           j
         )
+
+        # debias.cgm <- estimate.step2(
+        #   theta.hat = theta.hat.cgm,
+        #   beta=0,
+        #   A.m=0,
+        #   X = X.cgm.debias,
+        #   y.mvc=0,
+        #   y = y.cgm.debias,
+        #   predictor = j,
+        #   p.max.iter=p.max.iter
+        # )
         #   if('error' %in% names(debias.cgm)){
         #     error.flag <- 1
         #     if('error' %in% names(debias) & !'error' %in% names(debias.cgm)) err.source='MISLE'
