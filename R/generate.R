@@ -163,8 +163,12 @@ generate <- function(
     trans_pr <- exp(predictor.temp + beta * m) /
       (exp(predictor.temp + beta * m) + exp(-predictor.temp - beta * m))
     y.return[, r] <- 2 * rbinom(n, 1, trans_pr) - 1
-    if (verbose) {
-      paste0('Gibbs sampling completed for replication r=', r) |> print()
+    if (verbose & !r %% min(10, n.sim)) {
+      if (r == n.sim) {
+        paste0("Gibbs sampling completed")
+      } else {
+        paste0('Gibbs sampling completed for replication r=', r) |> print()
+      }
     }
   }
 

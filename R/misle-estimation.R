@@ -329,6 +329,7 @@ simulate <- function(
   }
 
   r <- start
+  print.freq = switch(verbose, '0' = n.sim, '1' = min(3, n.sim), '2' = 1)
   while (r <= n.sim) {
     # Compare to vdg
 
@@ -567,7 +568,9 @@ simulate <- function(
       #
       # if(compare.to.cgm) sqe.cgm[r,] <- (theta.tilde.cgm-theta)^2
 
-      # if(verbose & !j%%max(1,floor(d/5)) & (proposed.method | compare.to.cgm)) message( paste0("replication ", r, ": ", j, " covariates complete."))
+      if (verbose > 1) {
+        message(paste0("replication ", r, ": ", "covariate ", j, " complete."))
+      }
       # }
     }
 
@@ -634,7 +637,7 @@ simulate <- function(
       }
     }
 
-    if (verbose & !r %% 5) {
+    if (!r %% print.freq) {
       message(paste0("replication ", r, " complete."))
     }
 
