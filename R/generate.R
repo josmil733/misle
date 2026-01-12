@@ -8,6 +8,7 @@ generate <- function(
   p.edge,
   s,
   beta = 0.2,
+  theta.scale = 1,
   seed = 0,
   n.burnin = 5000,
   n.sim = 100,
@@ -122,7 +123,7 @@ generate <- function(
   theta <- rep(0, d)
   # theta[1:s] <- runif(s, 0.5, 1)*(2*rbinom(s, 1, 0.5) - 1)
   nonzero.inds <- sample(d, s)
-  theta[nonzero.inds] <- sample(c(-1, 1), s, replace = TRUE)
+  theta[nonzero.inds] <- sample(theta.scale * c(-1, 1), s, replace = TRUE)
   theta <- theta / norm(theta, '2') #normalize theta
   # theta[nonzero.inds] <- sample(c(-1,1), s, replace=TRUE)*runif(s, 0.5, 1)
   # predictor <- X %*% theta
@@ -163,7 +164,7 @@ generate <- function(
     trans_pr <- exp(predictor.temp + beta * m) /
       (exp(predictor.temp + beta * m) + exp(-predictor.temp - beta * m))
     y.return[, r] <- 2 * rbinom(n, 1, trans_pr) - 1
-    if (verbose & !r %% min(10, n.sim)) {
+    if (verbose > 0 & !r %% min(10, n.sim)) {
       if (r == n.sim) {
         paste0("Gibbs sampling completed")
       } else {
