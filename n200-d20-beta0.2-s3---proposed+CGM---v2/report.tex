@@ -1,0 +1,259 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Simulation Results},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Simulation Results}
+\author{}
+\date{\vspace{-2.5em}2026-01-13}
+
+\begin{document}
+\maketitle
+
+\subsection{Simulation Setup}\label{simulation-setup}
+
+This simulation is performed with \(n=200\) and \(d=20\), using the 2-d
+lattice as the underlying graph. \(s=3\) parameters are set to be
+nonzero, and the beta parameter is chosen to be \(\beta=0.2\). The
+attached results are for a 10-replication simulation. The true values of
+the parameter vector \(\theta\) are
+
+\begin{verbatim}
+0 0 0 0 0.5773503 0 0 0 0 0 0 0 0 0 0 -0.5773503 0 0 0 0.5773503 ,
+\end{verbatim}
+
+but for brevity, our simulation only estimates the indices of \(\theta\)
+in \(\mathcal C =\{\) 5, 16, 4, 8\(\}\) elements of \(\theta\).
+Accordingly, \textbf{all statistics and visuals are indicative of
+performance only on the set \(\mathcal C\).}
+
+The results from our code are compared to those of
+\href{http://www-stat.wharton.upenn.edu/~tcai/paper/Inference-GLM.pdf}{Cai,
+Guo, and Ma (2021)}.
+
+The attached results include the mean-squared error for each parameter
+estimate, as well as boxplots for a selection of nonzero and zero-valued
+parameters. In the boxplots, the green line represents the true value of
+the estimated parameter.
+
+After these, I show coverage statistics for 95\% symmetric confidence
+intervals for each of the parameters.
+
+\subsection{Results}\label{results}
+
+\subsubsection{\texorpdfstring{Mean-squared error comparison
+\((\frac{1}{n.sim}\sum_{i=1}^{n.sim} \frac{1}{|\mathcal C|}\|\hat\theta_{i,\mathcal C}-\theta_{\mathcal C}\|^2)\)}{Mean-squared error comparison (\textbackslash frac\{1\}\{n.sim\}\textbackslash sum\_\{i=1\}\^{}\{n.sim\} \textbackslash frac\{1\}\{\textbar\textbackslash mathcal C\textbar\}\textbackslash\textbar\textbackslash hat\textbackslash theta\_\{i,\textbackslash mathcal C\}-\textbackslash theta\_\{\textbackslash mathcal C\}\textbackslash\textbar\^{}2)}}\label{mean-squared-error-comparison-frac1n.simsum_i1n.sim-frac1mathcal-chattheta_imathcal-c-theta_mathcal-c2}
+
+\begin{longtable}[]{@{}lrr@{}}
+\caption{Mean-Squared Error of Parameter Estimates}\tabularnewline
+\toprule\noalign{}
+& proposed & cgm \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+& proposed & cgm \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+theta{[}5{]} & 0.184 & 0.191 \\
+theta{[}16{]} & 0.073 & 0.067 \\
+theta{[}4{]} & 0.117 & 0.024 \\
+theta{[}8{]} & 0.143 & 0.069 \\
+total & 0.129 & 0.088 \\
+\end{longtable}
+
+\begin{longtable}[]{@{}lrr@{}}
+\caption{Mean-Squared Error of First-Step Parameter
+Estimates}\tabularnewline
+\toprule\noalign{}
+& proposed & cgm \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+& proposed & cgm \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+theta{[}5{]} & 0.162 & 0.116 \\
+theta{[}16{]} & 0.105 & 0.113 \\
+theta{[}4{]} & 0.066 & 0.003 \\
+theta{[}8{]} & 0.097 & 0.011 \\
+total & 0.108 & 0.061 \\
+\end{longtable}
+
+\newpage
+
+\subsubsection{Boxplots}\label{boxplots}
+
+\pandocbounded{\includegraphics[keepaspectratio]{c:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/misle/n200-d20-beta0.2-s3---proposed+CGM---v2/report_files/figure-latex/unnamed-chunk-11-1.pdf}}
+\pandocbounded{\includegraphics[keepaspectratio]{c:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/misle/n200-d20-beta0.2-s3---proposed+CGM---v2/report_files/figure-latex/unnamed-chunk-11-2.pdf}}
+\pandocbounded{\includegraphics[keepaspectratio]{c:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/misle/n200-d20-beta0.2-s3---proposed+CGM---v2/report_files/figure-latex/unnamed-chunk-11-3.pdf}}
+\pandocbounded{\includegraphics[keepaspectratio]{c:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/misle/n200-d20-beta0.2-s3---proposed+CGM---v2/report_files/figure-latex/unnamed-chunk-11-4.pdf}}
+
+\newpage
+
+\subsubsection{First Step Histograms}\label{first-step-histograms}
+
+\pandocbounded{\includegraphics[keepaspectratio]{c:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/misle/n200-d20-beta0.2-s3---proposed+CGM---v2/report_files/figure-latex/unnamed-chunk-13-1.pdf}}
+\pandocbounded{\includegraphics[keepaspectratio]{c:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/misle/n200-d20-beta0.2-s3---proposed+CGM---v2/report_files/figure-latex/unnamed-chunk-13-2.pdf}}
+\pandocbounded{\includegraphics[keepaspectratio]{c:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/misle/n200-d20-beta0.2-s3---proposed+CGM---v2/report_files/figure-latex/unnamed-chunk-13-3.pdf}}
+\pandocbounded{\includegraphics[keepaspectratio]{c:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/misle/n200-d20-beta0.2-s3---proposed+CGM---v2/report_files/figure-latex/unnamed-chunk-13-4.pdf}}
+
+\newpage
+
+\subsubsection{Statistics and 95\% Confidence Intervals from
+per-Replicate
+Estimates}\label{statistics-and-95-confidence-intervals-from-per-replicate-estimates}
+
+\begin{longtable}[]{@{}lrrrrr@{}}
+\caption{Statistics for proposed Estimates}\tabularnewline
+\toprule\noalign{}
+& Min & Median & Max & lower.CI.btsp & upper.CI.btsp \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+& Min & Median & Max & lower.CI.btsp & upper.CI.btsp \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+theta{[}5{]} & -0.551 & 0.388 & 0.764 & -0.422 & 0.755 \\
+theta{[}16{]} & -1.072 & -0.804 & -0.500 & -1.042 & -0.538 \\
+theta{[}4{]} & -0.763 & -0.089 & 0.314 & -0.675 & 0.310 \\
+theta{[}8{]} & -0.606 & 0.007 & 0.726 & -0.548 & 0.657 \\
+\end{longtable}
+
+\begin{longtable}[]{@{}lrrrrr@{}}
+\caption{Statistics for cgm Estimates}\tabularnewline
+\toprule\noalign{}
+& Min & Median & Max & lower.CI.btsp & upper.CI.btsp \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+& Min & Median & Max & lower.CI.btsp & upper.CI.btsp \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+theta{[}5{]} & -0.730 & 0.589 & 0.800 & -0.494 & 0.792 \\
+theta{[}16{]} & -0.764 & -0.533 & 0.023 & -0.752 & -0.014 \\
+theta{[}4{]} & -0.406 & -0.070 & 0.097 & -0.356 & 0.086 \\
+theta{[}8{]} & -0.307 & -0.065 & 0.581 & -0.276 & 0.541 \\
+\end{longtable}
+
+\vspace{5pt}
+
+\subsubsection{Statistics for Theoretical 95\% Confidence
+Intervals}\label{statistics-for-theoretical-95-confidence-intervals}
+
+\begin{longtable}[]{@{}lrrrrr@{}}
+\caption{Theoretical 95\% Confidence Interval Statistics (averaged
+across replications) for proposed Estimates}\tabularnewline
+\toprule\noalign{}
+& Estimate & SE & lower.CI & upper.CI & cvg \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+& Estimate & SE & lower.CI & upper.CI & cvg \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+theta{[}5{]} & 0.358 & 0.234 & -0.101 & 0.817 & 0.8 \\
+theta{[}16{]} & -0.802 & 0.214 & -1.221 & -0.383 & 0.9 \\
+theta{[}4{]} & -0.077 & 0.190 & -0.449 & 0.296 & 0.8 \\
+theta{[}8{]} & 0.041 & 0.198 & -0.348 & 0.429 & 0.7 \\
+\end{longtable}
+
+\begin{longtable}[]{@{}lrrrrr@{}}
+\caption{Theoretical 95\% Confidence Interval Statistics (averaged
+across replications) for cgm Estimates}\tabularnewline
+\toprule\noalign{}
+& Estimate & SE & lower.CI & upper.CI & cvg \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+& Estimate & SE & lower.CI & upper.CI & cvg \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+theta{[}5{]} & 0.469 & 0.163 & 0.150 & 0.789 & 0.9 \\
+theta{[}16{]} & -0.471 & 0.158 & -0.781 & -0.161 & 0.8 \\
+theta{[}4{]} & -0.077 & 0.126 & -0.324 & 0.170 & 0.9 \\
+theta{[}8{]} & 0.041 & 0.127 & -0.208 & 0.290 & 0.7 \\
+\end{longtable}
+
+\end{document}

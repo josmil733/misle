@@ -124,7 +124,7 @@ generate <- function(
   # theta[1:s] <- runif(s, 0.5, 1)*(2*rbinom(s, 1, 0.5) - 1)
   nonzero.inds <- sample(d, s)
   theta[nonzero.inds] <- sample(theta.scale * c(-1, 1), s, replace = TRUE)
-  if (theta.scale != 1) {
+  if (theta.scale == 1) {
     theta <- theta / norm(theta, '2')
   } #normalize theta
   # theta[nonzero.inds] <- sample(c(-1,1), s, replace=TRUE)*runif(s, 0.5, 1)
