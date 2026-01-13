@@ -89,6 +89,8 @@ generate <- function(
       neighbors <- lattice.points[rowSums(distances) == 1, ]
       A[i, neighbors[, 1]] = 1
     }
+    # A <- A / 4 #adjustment for average degree
+    A <- A / (32 * beta + 0.1) #1/13/2026.
   }
 
   if (!lattice) {
@@ -96,9 +98,10 @@ generate <- function(
       set.seed(seed)
     }
     A <- gmodel.ER(n, mode = "prob", par = p.edge, rep = 1) #reinstate once mvc algorithm is general
+    stop(
+      "Not yet supported. First, figure out how to adjust for degree in non-lattice case."
+    )
   }
-
-  A <- A / 4 #adjustment for average degree
 
   ## construct the covariates
 
@@ -124,9 +127,8 @@ generate <- function(
   # theta[1:s] <- runif(s, 0.5, 1)*(2*rbinom(s, 1, 0.5) - 1)
   nonzero.inds <- sample(d, s)
   theta[nonzero.inds] <- sample(theta.scale * c(-1, 1), s, replace = TRUE)
-  if (theta.scale == 1) {
-    theta <- theta / norm(theta, '2')
-  } #normalize theta
+  theta <- theta / norm(theta, '2')
+  #normalize theta
   # theta[nonzero.inds] <- sample(c(-1,1), s, replace=TRUE)*runif(s, 0.5, 1)
   # predictor <- X %*% theta
   predictor <- matrix(NA, nrow = n, ncol = n.sim)

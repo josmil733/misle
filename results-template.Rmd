@@ -131,7 +131,7 @@ par(mfrow=c(1,length(methods.detected)))
 for(i in covts.record){
   for(m in methods.detected){
     result = env_get(results.env, paste0("results.hist.", m) )
-    hist(result$value[result$parameter.no==i,], freq = FALSE, main=paste0("Histogram of ", m, " estimates for theta[", i, "]=", theta[i]), cex.main=0.6, xlab=NULL)
+    hist(result$value[result$parameter.no==i,], freq = FALSE, main=paste0("Histogram of ", m, " estimates for theta[", i, "]=", theta[i] |> round(3)), cex.main=0.6, xlab=NULL)
     abline(v=theta[i], col='green', lty='dashed', lwd=2.5)
   }
 }
@@ -148,7 +148,7 @@ par(mfrow=c(1,length(methods.detected)))
 for(i in covts.record){
   for(m in methods.detected){
     result = env_get(results.env, paste0("results.hist.", m) )
-    hist(result$first.step, freq = FALSE, main=paste0("Histogram of ", m, " first-step estimates for theta[", i, "]=", theta[i]), cex.main=0.5, xlab=NULL)
+    hist(result$first.step, freq = FALSE, main=paste0("Histogram of ", m, " first-step estimates for theta[", i, "]=", theta[i] |> round(3)), cex.main=0.5, xlab=NULL)
     abline(v=theta[i], col='green', lty='dashed', lwd=2.5)
   }
 }
