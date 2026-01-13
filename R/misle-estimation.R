@@ -577,7 +577,14 @@ simulate <- function(
     }
 
     if (error.flag) {
-      data.regen <- regenerate(r, y[, n.sim])
+      data.regen <- regenerate(
+        r = r,
+        y = y[, n.sim],
+        A = A,
+        k = k,
+        theta = theta,
+        beta = beta
+      )
       data$Y[, r] = data.regen$y
       data$X[,, r] = data.regen$X
       y.ordered <- numeric(n)

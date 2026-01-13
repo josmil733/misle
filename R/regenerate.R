@@ -1,6 +1,8 @@
 #' @export regenerate
 
-regenerate <- function(r, y) {
+regenerate <- function(r, y, A, k, theta, beta) {
+      n <- nrow(A)
+      d <- length(theta)
       m <- A %*% y
       X <- matrix(runif(n * d, min = -k, max = k), nrow = n, ncol = d)
       predictor <- X %*% theta

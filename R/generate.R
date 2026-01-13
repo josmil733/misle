@@ -168,7 +168,7 @@ generate <- function(
     y.return[, r] <- 2 * rbinom(n, 1, trans_pr) - 1
     if (verbose > 0 & !r %% min(10, n.sim)) {
       if (r == n.sim) {
-        paste0("Gibbs sampling completed")
+        paste0("Gibbs sampling completed") |> print()
       } else {
         paste0('Gibbs sampling completed for replication r=', r) |> print()
       }
