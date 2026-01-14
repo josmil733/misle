@@ -365,7 +365,7 @@ simulate <- function(
         y = if (sample.split) y.is.train[, r] else y.is[, r],
         X = if (sample.split) X.is.train[,, r] else X.is[,, r],
         beta = beta,
-        A.m = A.m,
+        A.m = A.m[, train],
         mvc.c = mvc.c,
         tau = 0.8
       )
@@ -417,15 +417,15 @@ simulate <- function(
 
     for (j in covts.record) {
       if (proposed.method) {
-        # debias <- estimate.step2(theta.hat=theta.hat, beta = beta, A.m = A.m,
+        # debias.est <- estimate.step2(theta.hat=theta.hat, beta = beta, A.m = A.m,
         # X=if(sample.split) X.is.train else X.is,
         # y=if(sample.split) to_01(y.is.train[,r]) else to_01(y.is[,r]),
         # y.mvc = y.mvc[,r], predictor=j)
 
-        debias <- estimate.step2(
+        debias.est <- estimate.step2(
           theta.hat = theta.hat,
           beta = beta,
-          A.m = A.m,
+          A.m = A.m[, debias],
           X = if (sample.split) X.is.debias[,, r] else X.is[,, r],
           y = if (sample.split) to_01(y.is.debias[, r]) else to_01(y.is[, r]),
           y.mvc = y.mvc[, r],
@@ -433,7 +433,7 @@ simulate <- function(
           p.max.iter = p.max.iter
         )
 
-        if ('error' %in% names(debias)) {
+        if ('error' %in% names(debias.est)) {
           error.flag <- 1
           err.source <- 'MISLE'
         }
@@ -484,8 +484,8 @@ simulate <- function(
       }
 
       if (proposed.method) {
-        theta.tilde[j] <- debias$theta.tilde
-        se[j] <- debias$se
+        theta.tilde[j] <- debias.est$theta.tilde
+        se[j] <- debias.est$se
         if (j %in% results.hist.proposed$parameter.no) {
           results.hist.proposed$first.step[
             which(results.hist.proposed$parameter.no == j),
