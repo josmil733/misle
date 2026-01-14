@@ -4,6 +4,8 @@ date: "`r date`"
 output:
   pdf_document
 params:
+  mse: TRUE
+  mad: TRUE
   boxplot: TRUE
   bootstrap: TRUE
   first.step: TRUE
@@ -85,9 +87,6 @@ After these, I show coverage statistics for 95% symmetric confidence intervals f
 
 ## Results
 
-
-### Mean-squared error comparison $(\frac{1}{n.sim}\sum_{i=1}^{n.sim} \frac{1}{|\mathcal C|}\|\hat\theta_{i,\mathcal C}-\theta_{\mathcal C}\|^2)$
-
 ```{r}
 results.env <- new_environment(list())
 for(m in methods.detected){
@@ -96,7 +95,11 @@ for(m in methods.detected){
 }
 ```
 
-```{r}
+
+
+```{r eval=params$mse}
+cat("### Mean-squared error comparison $(\\frac{1}{n.sim}\\sum_{i=1}^{n.sim} \\frac{1}{|\\mathcal C|}\\|\\hat\\theta_{i,\\mathcal C}-\\theta_{\\mathcal C}\\|^2)$")
+
 sqe <- matrix(NA, nrow=length(covts.record)+1, ncol=length(results.env), dimnames = list(c(paste0("theta[", covts.record, "]"), 
 "total"), methods.detected))
 
@@ -120,7 +123,33 @@ kable(sqe.first.step, digits=3, caption="Mean-Squared Error of First-Step Parame
 
 \newpage
 
-```{r, results='asis', include=params$boxplot}
+```{r eval=params$mad}
+cat("### Mean absolute deviation comparison $(\\frac{1}{n.sim}\\sum_{i=1}^{n.sim} \\frac{1}{|\\mathcal C|}\\|\\hat\\theta_{i,\\mathcal C}-\\theta_{\\mathcal C}\\|)$")
+
+mad <- matrix(NA, nrow=length(covts.record)+1, ncol=length(results.env), dimnames = list(c(paste0("theta[", covts.record, "]"), 
+"total"), methods.detected))
+
+mad.first.step = mad
+
+for(m in methods.detected){
+  result = env_get(results.env, paste0("results.hist.", m) )
+  mad[-nrow(mad),m] <- abs(result$value-matrix(theta[covts.record], nrow=length(covts.record), ncol=n.sim)) |> rowMeans()
+  mad[nrow(mad),m] <- mean(mad[-nrow(mad),m])
+  if(m != 'vdg'){
+    mad.first.step[-nrow(mad),m] <- abs(result$first.step-matrix(theta[covts.record], nrow=length(covts.record), ncol=n.sim)) |> rowMeans()
+    mad.first.step[nrow(mad),m] <- mean(mad.first.step[-nrow(mad),m])
+  }
+}
+
+kable(mad, digits=3, caption="Mean Absolute Deviation of Parameter Estimates")
+kable(mad.first.step, digits=3, caption="Mean Absolute Deviation of First-Step Parameter Estimates")
+```
+
+
+
+\newpage
+
+```{r, results='asis', eval=params$boxplot}
 cat("### Boxplots")
 ```
 

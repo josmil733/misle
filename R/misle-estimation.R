@@ -13,7 +13,7 @@ simulate <- function(
   p.edge = 0.5,
   n.burnin = 5000,
   keep.every = 5,
-  verbose = FALSE,
+  verbose = 1,
   n.lambda = 20,
   eps = .00001,
   tau = 0.8,
