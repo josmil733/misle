@@ -107,8 +107,10 @@ simulate <- function(
         replace = FALSE
       )
       debias <- setdiff(1:length(mvc.c), train)
-      A.m <- A[mvc, mvc.c[train]]
-      dimnames(A.m) <- list(mvc, mvc.c[train])
+      # A.m <- A[mvc, mvc.c[train]]
+      # dimnames(A.m) <- list(mvc, mvc.c[train])
+      A.m <- A[mvc, mvc.c] #changed 1/14/2026
+      dimnames(A.m) <- list(mvc, mvc.c)
       y.is.train <- y.is[train, ]
       X.is.train <- X.is[train, , ]
       y.is.debias <- y.is[debias, ]
@@ -128,12 +130,6 @@ simulate <- function(
 
     # rejection.counter <- numeric(n.sim) #0 if fail to reject H_0, 1 otherwise
 
-    # if(proposed.method) sqe <- matrix(-1, nrow=n.sim, ncol=d)
-
-    # if(compare.to.cgm) sqe.cgm <- matrix(-1, nrow=n.sim, ncol=d)
-
-    # if(compare.to.vdg) sqe.vdg <- matrix(-1, nrow=n.sim, ncol=d)
-
     # record histogram on all nonzero parameters, plus <=2 sparse parameters
     set.seed(1)
     indices.off <- setdiff(1:d, indices.on)
@@ -149,27 +145,6 @@ simulate <- function(
 
     covts.on <- (if (length(indices.on) <= 2) indices.on else indices.on[1:2])
     covts.record <- c(covts.on, sparse.ind)
-
-    # methods <- c("proposed", "CGM", "vdG")
-    # methods.detected <- hutils::if_else(
-    #   c(proposed.method, compare.to.cgm, compare.to.vdg),
-    #   methods,
-    #   ""
-    # ) |>
-    #   str_subset(".")
-
-    # results.data = array(
-    #   -1,
-    #   dim = c(length(covts.record), n.sim, length(methods.detected)),
-    #   dimnames = list(
-    #     par.no = covts.record,
-    #     sim = 1:n.sim,
-    #     method = methods.detected
-    #   )
-    # )
-
-    # output = list() #master output object
-    # for (method in methods.detected) {}
 
     if (proposed.method) {
       results.hist.proposed <- tibble(
