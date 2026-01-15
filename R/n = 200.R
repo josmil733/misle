@@ -3,6 +3,7 @@ d = 10
 k = 2
 beta = 0
 s = 2
+theta.scale = 1
 n.sim = 10
 
 seed = 0

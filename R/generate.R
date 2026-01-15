@@ -89,8 +89,8 @@ generate <- function(
       neighbors <- lattice.points[rowSums(distances) == 1, ]
       A[i, neighbors[, 1]] = 1
     }
-    # A <- A / 4 #adjustment for average degree
-    A <- A / (32 * beta + 0.1) #1/13/2026.
+    A <- A / 4 #adjustment for average degree
+    # A <- A / (32 * beta + 0.1) #1/13/2026.
   }
 
   if (!lattice) {
