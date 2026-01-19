@@ -373,7 +373,7 @@ simulate <- function(
         A.m = A.m[, train],
         mvc.c = mvc.c,
         tau = 0.8
-      )
+      )$coef
     }
 
     if (compare.to.cgm) {
@@ -626,7 +626,7 @@ simulate <- function(
       }
     }
 
-    if (!r %% print.freq) {
+    if (print.freq != 1 & !r %% print.freq) {
       message(paste0("replication ", r, " complete."))
     }
 

@@ -80,5 +80,5 @@ estimate.step1 <- function(
    BIC <- apply(coef_seq, 2, loss, beta, A.m, mvc.c, y.mvc, y, X) +
       log(n) * apply(coef_seq, 2, function(x) length(which(x != 0)))
 
-   return(coef_seq[, which.min(BIC)])
+   return(coef = coef_seq[, which.min(BIC)], lambda = lambda[which.min(BIC)])
 }
