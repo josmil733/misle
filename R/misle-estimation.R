@@ -306,7 +306,12 @@ simulate <- function(
   }
 
   r <- start
-  print.freq = switch(verbose, '0' = n.sim, '1' = min(3, n.sim), '2' = 1)
+  print.freq = switch(
+    as.character(verbose),
+    '0' = n.sim,
+    '1' = min(3, n.sim),
+    '2' = 1
+  )
   while (r <= n.sim) {
     # Compare to vdg
 
