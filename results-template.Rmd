@@ -55,9 +55,9 @@ cat(" **Note**: ", note)
 
 This simulation is performed with $n=`r n`$ and $d=`r d`$, using the 2-d lattice as the underlying graph. $s=`r s`$ parameters are set to be nonzero, and the beta parameter is chosen to be $\beta=`r beta`$. The attached results are for a `r n.sim`-replication simulation. The parameter vector $\theta$ has sparse components other than the following:
 
-```{r}
+```{r, results='asis'}
 # cat(theta, ",")
-cat(paste0("$$\\theta$$", ))
+cat(paste0("$\\theta$", '$[$', indices.on, '$] = ', round(theta[indices.on],3), collapse=""))
 ```
 
 but for brevity, our simulation only estimates the indices of $\theta$ in $\mathcal C =\{$ `r paste0(covts.record, "")`$\}$ elements of $\theta$. Accordingly, **all statistics and visuals are indicative of performance only on the set $\mathcal C$.**

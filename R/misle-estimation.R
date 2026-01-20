@@ -372,7 +372,7 @@ simulate <- function(
 
     if (proposed.method) {
       est.1.proposed <- estimate.step1(
-        grid.lambda = list(from = 0.01, to = 0.2, length.out = 20),
+        grid.lambda = list(from = 0.01, to = 0.1, length.out = 20),
         d = d,
         eps = eps,
         y.mvc = y.mvc[, r],
