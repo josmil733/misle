@@ -20,6 +20,7 @@ estimate.step1 <- function(
       length.out = grid.lambda$length.out
    )
    coef_seq <- matrix(0, nrow = d, ncol = length(lambda))
+   results = matrix(NA, nrow = length(lambda), ncol = 5)
    # proximal gradient method
    for (s in 1:length(lambda)) {
       theta_ok <- rep(0, d) #current iteration
@@ -80,5 +81,18 @@ estimate.step1 <- function(
    BIC <- apply(coef_seq, 2, loss, beta, A.m, mvc.c, y.mvc, y, X) +
       log(n) * apply(coef_seq, 2, function(x) length(which(x != 0)))
 
-   return(coef = coef_seq[, which.min(BIC)], lambda = lambda[which.min(BIC)])
+   return(list(
+      coef = coef_seq[, which.min(BIC)],
+      best.lambda = lambda[which.min(BIC)],
+      # results = data.frame(lambda=lambda, ind.1 = coef_seq[indices.on[1], ], ind.2 = coef_seq[indices.on[2], ], count.on=colSums(coef_seq != 0), BIC = BIC)
+      results = matrix(
+         c(
+            lambda,
+            coef_seq[indices.on[1], ],
+            coef_seq[indices.on[2], ],
+            colSums(coef_seq != 0),
+            BIC
+         )
+      )
+   ))
 }

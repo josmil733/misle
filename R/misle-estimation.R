@@ -305,6 +305,15 @@ simulate <- function(
       message()
   }
 
+  first.step.out <- array(
+    NA,
+    dim = c(30, 5, n.sim),
+    dimnames = list(
+      NULL,
+      measurement = c('lambda', 'ind.1', 'ind.2', 'count.on', 'BIC'),
+      rep = 1:n.sim
+    )
+  )
   r <- start
   print.freq = switch(
     as.character(verbose),
@@ -362,8 +371,8 @@ simulate <- function(
     # Step 1: construct \ell_1-penalized MLE
 
     if (proposed.method) {
-      theta.hat <- estimate.step1(
-        grid.lambda = list(from = 0.01, to = 0.1, length.out = 20),
+      est.1.proposed <- estimate.step1(
+        grid.lambda = list(from = 0.01, to = 0.2, length.out = 20),
         d = d,
         eps = eps,
         y.mvc = y.mvc[, r],
@@ -373,7 +382,9 @@ simulate <- function(
         A.m = A.m[, train],
         mvc.c = mvc.c,
         tau = 0.8
-      )$coef
+      )
+      theta.hat <- est.1.proposed$coef
+      first.step.out[,, r] <- est.1.proposed$results
     }
 
     if (compare.to.cgm) {
