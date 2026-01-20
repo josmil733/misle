@@ -10,7 +10,8 @@ estimate.step1 <- function(
    beta,
    A.m,
    mvc.c,
-   tau = 0.8
+   tau = 0.8,
+   theta
 ) {
    # attach(grid.lambda)
    n = nrow(X)
@@ -80,6 +81,8 @@ estimate.step1 <- function(
 
    BIC <- apply(coef_seq, 2, loss, beta, A.m, mvc.c, y.mvc, y, X) +
       log(n) * apply(coef_seq, 2, function(x) length(which(x != 0)))
+
+   indices.on <- which(theta != 0) #only used for results table--oracle \theta does not affect method output
 
    return(list(
       coef = coef_seq[, which.min(BIC)],

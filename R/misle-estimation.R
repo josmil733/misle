@@ -381,7 +381,8 @@ simulate <- function(
         beta = beta,
         A.m = A.m[, train],
         mvc.c = mvc.c,
-        tau = 0.8
+        tau = 0.8,
+        theta = theta
       )
       theta.hat <- est.1.proposed$coef
       first.step.out[,, r] <- est.1.proposed$results
