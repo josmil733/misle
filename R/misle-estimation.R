@@ -307,7 +307,7 @@ simulate <- function(
 
   first.step.out <- array(
     NA,
-    dim = c(30, 5, n.sim),
+    dim = c(20, 5, n.sim),
     dimnames = list(
       NULL,
       measurement = c('lambda', 'ind.1', 'ind.2', 'count.on', 'BIC'),

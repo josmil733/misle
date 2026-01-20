@@ -57,7 +57,7 @@ This simulation is performed with $n=`r n`$ and $d=`r d`$, using the 2-d lattice
 
 ```{r}
 # cat(theta, ",")
-
+cat(paste0("$$\\theta$$", ))
 ```
 
 but for brevity, our simulation only estimates the indices of $\theta$ in $\mathcal C =\{$ `r paste0(covts.record, "")`$\}$ elements of $\theta$. Accordingly, **all statistics and visuals are indicative of performance only on the set $\mathcal C$.**
