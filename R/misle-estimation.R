@@ -411,7 +411,8 @@ simulate <- function(
           alpha = 1,
           intercept = FALSE,
           # lambda = cons2 * sqrt(2 * log(d) / n),
-          lambda = cons2 * sqrt(log(d) / n), #changed 1/9/2026 in accord with real_data7.R from CGM
+          # lambda = cons2 * sqrt(log(d) / n), #changed 1/9/2026 in accord with real_data7.R from CGM
+          lambda = 0.1, #changed 1/21/2026 for testing
           standardize = FALSE
         )$beta |>
           as.vector()

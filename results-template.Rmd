@@ -7,8 +7,8 @@ params:
   mse: TRUE
   mad: TRUE
   boxplot: TRUE
-  bootstrap: TRUE
-  first.step: TRUE
+  bootstrap: FALSE
+  first.step: FALSE
   ci: TRUE
 ---
 
@@ -17,9 +17,10 @@ params:
 ```
 
 
-```{r include=FALSE, eval=TRUE}
+```{r include=FALSE, eval=TRUE, message=FALSE}
 library(knitr)
 library(listr)
+library(kableExtra)
 opts_chunk$set(echo=FALSE, comment='')
 
 methods <- c("proposed", "cgm", "vdg")
@@ -55,9 +56,20 @@ cat(" **Note**: ", note)
 
 This simulation is performed with $n=`r n`$ and $d=`r d`$, using the 2-d lattice as the underlying graph. $s=`r s`$ parameters are set to be nonzero, and the beta parameter is chosen to be $\beta=`r beta`$. The attached results are for a `r n.sim`-replication simulation. The parameter vector $\theta$ has sparse components other than the following:
 
-```{r, results='asis'}
+```{r, results='asis', eval=FALSE}
 # cat(theta, ",")
-cat(paste0("$\\theta$", '$[$', indices.on, '$] = ', round(theta[indices.on],3), collapse=""))
+cat(paste0('$\\theta[', indices.on, '] = ', round(theta[indices.on],3), "$ \\hspace{3pt}", collapse=""))
+```
+
+```{r}
+# kable(data.frame("Parameter Index"=indices.on, Value=round(theta[indices.on],3)), caption="True Nonzero Parameter Values")
+
+df_k <- data.frame("Parameter Index" = indices.on, Value = round(theta[indices.on], 3))
+kable(df_k, format = "latex", booktabs = FALSE) |>
+  kable_styling(latex_options = "hold_position") #|>
+  # column_spec(1:ncol(df_k), border_left = TRUE, border_right = TRUE) |>
+  # row_spec(0, hline_after = TRUE) |>
+  # row_spec(1:nrow(df_k), hline_after = TRUE)
 ```
 
 but for brevity, our simulation only estimates the indices of $\theta$ in $\mathcal C =\{$ `r paste0(covts.record, "")`$\}$ elements of $\theta$. Accordingly, **all statistics and visuals are indicative of performance only on the set $\mathcal C$.**
@@ -96,10 +108,12 @@ for(m in methods.detected){
 }
 ```
 
-
+```{r eval=params$mse, results='asis'}
+# cat("### Mean-squared error comparison $(\\frac{1}{n.sim}\\sum_{i=1}^{n.sim} \\frac{1}{|\\mathcal C|}\\|\\hat\\theta_{i,\\mathcal C}-\\theta_{\\mathcal C}\\|^2)$")
+cat("### Mean-squared error comparison")
+```
 
 ```{r eval=params$mse}
-cat("### Mean-squared error comparison $(\\frac{1}{n.sim}\\sum_{i=1}^{n.sim} \\frac{1}{|\\mathcal C|}\\|\\hat\\theta_{i,\\mathcal C}-\\theta_{\\mathcal C}\\|^2)$")
 
 sqe <- matrix(NA, nrow=length(covts.record)+1, ncol=length(results.env), dimnames = list(c(paste0("theta[", covts.record, "]"), 
 "total"), methods.detected))
