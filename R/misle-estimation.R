@@ -8,6 +8,7 @@ simulate <- function(
   k = 2,
   n.sim,
   seed = 0,
+  lambda.range = c(1e-7, 1e-3),
   theta.scale = 1,
   lattice = TRUE,
   p.edge = 0.5,
@@ -40,7 +41,7 @@ simulate <- function(
   require(rlang)
   require(listr)
   require(hdi)
-  require(misle)
+  # require(misle)
 
   # source("C:/Users/josmi/UFL Dropbox/Joshua Miles/Overleaf/Inference_Ising/Code/LSW_logit2.R") #a version of Cai, Guo, and Ma's (2021) original that removes some unnecessary things and reformats code for more efficient calculation.
 
@@ -372,7 +373,11 @@ simulate <- function(
 
     if (proposed.method) {
       est.1.proposed <- estimate.step1(
-        grid.lambda = list(from = 0.01, to = 0.1, length.out = 20),
+        grid.lambda = list(
+          from = min(lambda.range),
+          to = max(lambda.range),
+          length.out = 20
+        ),
         d = d,
         eps = eps,
         y.mvc = y.mvc[, r],
