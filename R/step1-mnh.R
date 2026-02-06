@@ -102,7 +102,7 @@ N <- length(y)
       # results = data.frame(lambda=lambda, ind.1 = coef_seq[indices.on[1], ], ind.2 = coef_seq[indices.on[2], ], count.on=colSums(coef_seq != 0), BIC = BIC)
       results = matrix(
         c(
-          lam %>% round(-log(lam[1], 10)),
+          lam %>% round(-log(lam[1], 10)+1),
           coef_seq[indices.on[1], ],
           coef_seq[indices.on[2], ],
           colSums(coef_seq != 0),
