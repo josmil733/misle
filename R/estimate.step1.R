@@ -11,7 +11,9 @@ estimate.step1 <- function(
    A.m,
    mvc.c,
    tau = 0.8,
-   theta
+   theta,
+   max.iter=300,
+   alpha.bic=alpha.bic
 ) {
    # attach(grid.lambda)
    n = nrow(X)
@@ -25,10 +27,11 @@ estimate.step1 <- function(
    # proximal gradient method
    for (s in 1:length(lambda)) {
       theta_ok <- rep(0, d) #current iteration
-      theta_kk <- rep(100, d) #? previous iteration
+      theta_kk <- rep(2, d) #? previous iteration
       t_k <- 1
       k <- 0
-      while (sum(abs(theta_ok - theta_kk)) > eps) {
+      iter <- 0
+      while (sum(abs(theta_ok - theta_kk)) > eps & (iter < max.iter)) {
          theta_k <- theta_ok
          grad <- lossgrad(
             theta = theta_k,
@@ -75,12 +78,14 @@ estimate.step1 <- function(
             theta_kk <- theta_k
             k <- k + 1
          }
+         iter <- iter+1
+         if(iter==max.iter) paste0("Maximum first step iterations reached for lambda = ", lambda[s] %>% round(-log(lambda[1], 10))) %>% message()
       }
       coef_seq[, s] <- theta_ok
    }
 
    BIC <- apply(coef_seq, 2, loss, beta, A.m, mvc.c, y.mvc, y, X) +
-      log(n) * apply(coef_seq, 2, function(x) length(which(x != 0)))
+      log(n) * alpha.bic * apply(coef_seq, 2, function(x) length(which(x != 0)))
 
    indices.on <- which(theta != 0) #only used for results table--oracle \theta does not affect method output
 
@@ -90,7 +95,7 @@ estimate.step1 <- function(
       # results = data.frame(lambda=lambda, ind.1 = coef_seq[indices.on[1], ], ind.2 = coef_seq[indices.on[2], ], count.on=colSums(coef_seq != 0), BIC = BIC)
       results = matrix(
          c(
-            lambda,
+            lambda %>% round(-log(lambda[1], 10)),
             coef_seq[indices.on[1], ],
             coef_seq[indices.on[2], ],
             colSums(coef_seq != 0),

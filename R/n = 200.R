@@ -1,11 +1,13 @@
-n = 200
-d = 400
+n = 800
+d = 50
 k = 2
 beta = 0
 s = 2
 theta.scale = 1
 n.sim = 10
-
+lambda.range=c(0.01,0.1)
+max.iter = 1000
+alpha.bic = 0.1
 seed = 0
 lattice = TRUE
 p.edge = 0.5
@@ -17,7 +19,7 @@ eps = .00001
 tau = 0.8
 sample.split = TRUE
 p.max.iter = 6
-compare.to.cgm = TRUE
+compare.to.cgm = FALSE
 optimize.cgm = FALSE
 compare.to.vdg = FALSE
 proposed.method = TRUE

@@ -9,7 +9,9 @@ simulate <- function(
   n.sim,
   seed = 0,
   lambda.range = c(1e-7, 1e-3),
+  alpha.bic = 1,
   theta.scale = 1,
+  max.iter = 100,
   lattice = TRUE,
   p.edge = 0.5,
   n.burnin = 5000,
@@ -308,10 +310,10 @@ simulate <- function(
 
   first.step.out <- array(
     NA,
-    dim = c(20, 5, n.sim),
+    dim = c(20, 6, n.sim),
     dimnames = list(
       NULL,
-      measurement = c('lambda', 'ind.1', 'ind.2', 'count.on', 'BIC'),
+      measurement = c('lambda', 'ind.1', 'ind.2', 'count.on', 'BIC', 'l1.err'),
       rep = 1:n.sim
     )
   )
@@ -372,12 +374,31 @@ simulate <- function(
     # Step 1: construct \ell_1-penalized MLE
 
     if (proposed.method) {
-      est.1.proposed <- estimate.step1(
+      # est.1.proposed <- estimate.step1(
+      #   grid.lambda = list(
+      #     from = min(lambda.range),
+      #     to = max(lambda.range),
+      #     length.out = 20
+      #   ),
+      #   d = d,
+      #   eps = eps,
+      #   y.mvc = y.mvc[, r],
+      #   y = if (sample.split) y.is.train[, r] else y.is[, r],
+      #   X = if (sample.split) X.is.train[,, r] else X.is[,, r],
+      #   beta = beta,
+      #   A.m = A.m[, train],
+      #   mvc.c = mvc.c,
+      #   tau = 0.8,
+      #   theta = theta,
+      #   max.iter=max.iter,
+      #   alpha.bic = alpha.bic
+      # )
+
+      est.1.proposed <- step1.mnh(
         grid.lambda = list(
           from = min(lambda.range),
           to = max(lambda.range),
-          length.out = 20
-        ),
+          length.out = 20),
         d = d,
         eps = eps,
         y.mvc = y.mvc[, r],
@@ -389,6 +410,7 @@ simulate <- function(
         tau = 0.8,
         theta = theta
       )
+
       theta.hat <- est.1.proposed$coef
       first.step.out[,, r] <- est.1.proposed$results
     }
