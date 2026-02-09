@@ -138,18 +138,6 @@ report <- function(
     sim.active = TRUE
   }
 
-  env_coalesce(current_env(), output)
-
-  directory <- paste0(results.dir, "/")
-  methods <- c("proposed", "CGM", "vdG")
-  methods.detected <- hutils::if_else(
-    c(proposed.method, compare.to.cgm, compare.to.vdg),
-    methods,
-    ""
-  ) |>
-    str_subset(".")
-
-  # file.param.name <- paste0('n',n, '-d',d, '-beta',beta, '-s', s)
   file.param.name <- paste0(
     'n',
     env_get(output, 'n'),
@@ -160,15 +148,29 @@ report <- function(
     '-s',
     env_get(output, 's')
   )
+
+  # env_coalesce(current_env(), output)
+
+  if(sim.active){
+
+  directory <- paste0(results.dir, "/")
+  methods <- c("proposed", "CGM", "vdG")
+  methods.detected <- hutils::if_else(
+    c(proposed.method, compare.to.cgm, compare.to.vdg),
+    methods,
+    ""
+  ) |>
+    str_subset(".")
+
   file.method.name <- paste0(methods.detected, collapse = "+")
   file.name <- paste0(file.param.name, "---", file.method.name)
   folder <- paste0(directory, ifelse(ec, 'EC---', ''), file.name)
   setwd(directory)
 
-  if (file.exists(folder) & sim.active) {
+  if (file.exists(folder)) {
     similar.names <- list.dirs(recursive = FALSE) |>
-      str_subset(file.name) |>
-      str_remove("\\./")
+      str_remove("\\./") |>
+      str_subset(file.name %>% str_replace("\\+", "\\\\+"))
     if (length(similar.names) > 1) {
       latest.version <- similar.names |>
         str_subset("v\\d") |>
@@ -186,11 +188,21 @@ report <- function(
       "."
     ) |>
       message()
+
   }
 
-  if (sim.active) {
+
+
+  } else {
+    data.folder <- str_remove(simulation.path, "/\\w+-\\w+\\.\\w+")
+    folder <- paste0(results.dir, "/", data.folder)
+  }
+
+  if(is.null(simulation.path)){
     dir.create(folder)
   }
+
+  if(sim.active) save(output, file = paste0(folder, '/sim-data.RData'))
 
   env_bind(
     output,
@@ -201,7 +213,6 @@ report <- function(
     folder = folder,
     file.param.name = file.param.name
   )
-  save(output, file = paste0(folder, '/sim-data.RData'))
   render(
     'results-template.Rmd',
     output_file = paste0(folder, '/report.pdf'),
