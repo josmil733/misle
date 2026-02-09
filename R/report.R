@@ -202,7 +202,9 @@ report <- function(
     dir.create(folder)
   }
 
-  if(sim.active) save(output, file = paste0(folder, '/sim-data.RData'))
+  if(sim.active){
+    save(output, file = paste0(folder, '/sim-data.RData'))
+  }
 
   env_bind(
     output,
